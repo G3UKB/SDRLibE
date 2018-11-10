@@ -25,6 +25,9 @@ bob@bobcowdery.plus.com
 
 */
 
+#ifndef _include_h
+#define _include_h
+
 // System includes
 //#include <windows.h>
 #include <winsock2.h>
@@ -33,7 +36,12 @@ bob@bobcowdery.plus.com
 //#include <stdio.h>
 //#include <sys/types.h>
 //#include <math.h>
+#include "../../../../libs/pthreads/include/pthread.h"
 
 // Application includes
 #include "defs.h"
 #include "../radio/hw_control.h"
+#include "../radio/udp_reader.h"
+#include "../radio/udp_writer.h"
+
+#endif

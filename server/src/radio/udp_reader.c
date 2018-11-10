@@ -1,7 +1,7 @@
 /*
 udp_reader.c
 
-Read data from UDP.
+Read UDP radio data stream
 
 Copyright (C) 2018 by G3UKB Bob Cowdery
 
@@ -31,16 +31,14 @@ The authors can be reached by email at:
 static void udprecvdata(int sd, struct sockaddr_in *cliAddr);
 
 // Module vars
-unsigned char frame[METIS_FRAME_SZ];
-ringb_t *rb;                    // The audio ring buffer
+unsigned char frame[FRAME_SZ];
 
 // Thread entry point for ALSA processing
 void *udp_reader_imp(void* data){
     // Get our thread parameters
-    udp_thread_data* td = (udp_thread_data*)data;
+    udp_reader_thread_data* td = (udp_reader_thread_data*)data;
     int sd = td->socket;
     struct sockaddr_in *srv_addr = td->srv_addr;
-    rb = td->rb;
 
     printf("Started UDP reader thread\n");
 
@@ -64,12 +62,12 @@ static void udprecvdata(int sd, struct sockaddr_in *srvAddr) {
 
     int i,j,n;
     int addr_sz = sizeof(*srvAddr);
-    unsigned char acc[USB_DATA_SZ*2];
+    unsigned char acc[DATA_SZ*2];
     unsigned short data[NUM_SMPLS*2];
 
     // Read a frame size data packet
-    n = recvfrom(sd, (char*)frame, METIS_FRAME_SZ, 0, (struct sockaddr*)srvAddr, &addr_sz);
-    if(n == METIS_FRAME_SZ) {
+    n = recvfrom(sd, (char*)frame, FRAME_SZ, 0, (struct sockaddr*)srvAddr, &addr_sz);
+    if(n == FRAME_SZ) {
         // We have a metis frame
         // First 8 bytes are the metis header, then 2x512 bytes of
         // Extract the I/Q data and add to the ring buffer
@@ -77,19 +75,8 @@ static void udprecvdata(int sd, struct sockaddr_in *srvAddr) {
         for (i=START_FRAME_1, j=0 ; i<END_FRAME_1 ; i++, j++) {
             acc[j] = frame[i];
         }
-        for (i=START_FRAME_2, j=USB_DATA_SZ ; i<END_FRAME_2 ; i++, j++) {
+        for (i=START_FRAME_2, j=DATA_SZ ; i<END_FRAME_2 ; i++, j++) {
             acc[j] = frame[i];
-        }
-        // Extract just the IQ data and convert to 16 bit LE
-        for (i=0,j=0 ; i<USB_DATA_SZ*2 ; i+=8, j+=2) {
-            // We take interleaved 24 bit BE IQ data and convert to 16 bit LE
-            // I data
-            data[j] = ((acc[i+2] << 8) | (acc[i+1] << 16) | (acc[i] << 24)) >> 8;
-            data[j+1] = ((acc[i+5] << 8) | (acc[i+4] << 16) | (acc[i+3] << 24)) >> 8;
-        }
-        // Add to ring buffer
-        if (ringb_write_space (rb) > NUM_SMPLS*4) {
-            ringb_write (rb, (const char *)data, NUM_SMPLS*4);
         }
     }
 }

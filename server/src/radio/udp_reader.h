@@ -1,7 +1,7 @@
 /*
 udp_reader.h
 
-UDP reader header file
+Read UDP radio data stream
 
 Copyright (C) 2018 by G3UKB Bob Cowdery
 
@@ -26,6 +26,19 @@ The authors can be reached by email at:
 
 #ifndef _udp_reader_h
 #define _udp_reader_h
+
+//==================================================================
+// Reader thread
+pthread_t udp_reader_thd;
+
+// Thread data structure for UDP reader/writer
+typedef struct udp_reader_thread_data {
+	int run;
+	int terminate;
+	int socket;
+	struct sockaddr_in *srv_addr;
+}udp_reader_thread_data;
+udp_reader_thread_data *udp_reader_td;
 
 // Prototypes
 void *udp_reader_imp();

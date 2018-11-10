@@ -1,7 +1,7 @@
 /*
 udp_writer.h
 
-UDP writer header file
+Write UDP radio data stream
 
 Copyright (C) 2018 by G3UKB Bob Cowdery
 
@@ -26,6 +26,19 @@ The authors can be reached by email at:
 
 #ifndef _udp_writer_h
 #define _udp_writer_h
+
+//==================================================================
+// Writer thread
+pthread_t udp_writer_thd;
+
+// Thread data structure for UDP reader/writer
+typedef struct udp_writer_thread_data {
+	int run;
+	int terminate;
+	int socket;
+	struct sockaddr_in *srv_addr;
+}udp_writer_thread_data;
+udp_writer_thread_data *udp_writer_td;
 
 // Constants
 // One USB frame is 63 24 bit samples

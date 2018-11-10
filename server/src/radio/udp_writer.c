@@ -1,7 +1,7 @@
 /*
 udp_writer.c
 
-Write data to UDP.
+Write UDP radio data stream
 
 Copyright (C) 2018 by G3UKB Bob Cowdery
 
@@ -28,7 +28,7 @@ The authors can be reached by email at:
 #include "../common/include.h"
 
 short *smpl_buffer;
-unsigned char packet_buffer[METIS_FRAME_SZ];
+unsigned char packet_buffer[FRAME_SZ];
 
 // Local functions
 static void set_metis_header(unsigned char *buffer);
@@ -53,7 +53,7 @@ void *udp_writer_imp(void* data){
     unsigned int new_freq;
 
     // Get our thread parameters
-    udp_thread_data* td = (udp_thread_data*)data;
+    udp_writer_thread_data* td = (udp_writer_thread_data*)data;
     int sd = td->socket;
     struct sockaddr_in *srv_addr = td->srv_addr;
 
@@ -61,23 +61,7 @@ void *udp_writer_imp(void* data){
 
     while (td->terminate == FALSE) {
         if (td->run) {
-            new_freq = fcd_get_freq();
-            if (new_freq != last_freq){
-                // We have a frequency change
-                // Format the message
-                memset(packet_buffer,0x0,METIS_FRAME_SZ);
-                set_metis_header(packet_buffer);
-                set_usb_header(USB_SYNC_1, packet_buffer);
-                set_freq(USB_FREQ_1, new_freq, packet_buffer);
-                set_usb_header(USB_SYNC_2, packet_buffer);
-                set_freq(USB_FREQ_2, new_freq, packet_buffer);
-
-                // Dispatch
-                //printf("Freq: %d\n", new_freq);
-                if (sendto(sd, (const char*)packet_buffer, METIS_FRAME_SZ, 0, (struct sockaddr*) srv_addr, sizeof(*srv_addr)) == -1) {
-                    printf("UDP dispatch failed!\n");
-                }
-            }
+			;
         } else {
             Sleep(0.1);
         }
