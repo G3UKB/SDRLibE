@@ -35,7 +35,7 @@ bob@bobcowdery.plus.com
 //#include <string.h>
 //#include <stdio.h>
 //#include <sys/types.h>
-//#include <math.h>
+#include <math.h>
 #include "../../../../libs/pthreads/include/pthread.h"
 
 // Application includes
