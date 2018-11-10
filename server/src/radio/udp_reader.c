@@ -28,12 +28,13 @@ The authors can be reached by email at:
 #include "../common/include.h"
 
 // Forward refs
-static void udprecvdata(int sd, struct sockaddr_in *cliAddr);
+static void udprecvdata(udp_reader_thread_data* td);
 
 // Module vars
 unsigned char frame[FRAME_SZ];
+unsigned char frame_data[DATA_SZ * 2];
 
-// Thread entry point for ALSA processing
+// Thread entry point for processing
 void *udp_reader_imp(void* data){
     // Get our thread parameters
     udp_reader_thread_data* td = (udp_reader_thread_data*)data;
@@ -42,41 +43,47 @@ void *udp_reader_imp(void* data){
 
     printf("Started UDP reader thread\n");
 
-    while (td->terminate == FALSE) {
-        if (td->run) {
-            udprecvdata(sd, srv_addr);
-        } else {
-            Sleep(0.1);
-        }
-    }
+	while (!td->terminate) {
+		if (td->run && !td->terminate) {
+			// Wile running we stay in the receive loop
+			udprecvdata(td, srv_addr);
+		}
+		else {
+			Sleep(0.1);
+		}
+	}
 
     printf("UDP Reader thread exiting...\n");
     return NULL;
 }
 
-
-// Read and discard data but extract the tuning frequency
-// Set the FCD to the frequency
-// ToDo - Enhance for other sound card type devices
-static void udprecvdata(int sd, struct sockaddr_in *srvAddr) {
+static void udprecvdata(udp_reader_thread_data* td) {
 
     int i,j,n;
-    int addr_sz = sizeof(*srvAddr);
     unsigned char acc[DATA_SZ*2];
-    unsigned short data[NUM_SMPLS*2];
 
-    // Read a frame size data packet
-    n = recvfrom(sd, (char*)frame, FRAME_SZ, 0, (struct sockaddr*)srvAddr, &addr_sz);
-    if(n == FRAME_SZ) {
-        // We have a metis frame
-        // First 8 bytes are the metis header, then 2x512 bytes of
-        // Extract the I/Q data and add to the ring buffer
-        // Get the raw byte sequence I=24bit,Q=24bit,Mic=16bit
-        for (i=START_FRAME_1, j=0 ; i<END_FRAME_1 ; i++, j++) {
-            acc[j] = frame[i];
-        }
-        for (i=START_FRAME_2, j=DATA_SZ ; i<END_FRAME_2 ; i++, j++) {
-            acc[j] = frame[i];
-        }
-    }
+	int sd = td->socket;
+	struct sockaddr_in *srv_addr = td->srv_addr;
+	int addr_sz = sizeof(*srv_addr);
+
+	// Loop receiving stream from radio
+	while (td->run && !td->terminate) {
+		// Read a frame size data packet
+		n = recvfrom(sd, (char*)frame, FRAME_SZ, 0, (struct sockaddr*)srv_addr, &addr_sz);
+		if (n == FRAME_SZ) {
+			// We have a frame
+			// First 8 bytes are the header, then 2x512 bytes of data
+			// Then the sync and cc bytes are the start of each data frame
+			// 
+			for (i = START_FRAME_1, j = 0; i < END_FRAME_1; i++, j++) {
+				frame_data[j] = frame[i];
+			}
+			for (i = START_FRAME_2, j = DATA_SZ; i < END_FRAME_2; i++, j++) {
+				frame_data[j] = frame[i];
+			}
+			// Dispatch the frame for processing
+
+			// If output data then format and write to radio
+		}
+	}
 }

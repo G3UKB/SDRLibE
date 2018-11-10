@@ -1,7 +1,7 @@
 /*
-include.h
+cc_in.h
 
-Common include file
+Command bytes in processing
 
 Copyright (C) 2018 by G3UKB Bob Cowdery
 
@@ -24,27 +24,3 @@ The authors can be reached by email at:
 bob@bobcowdery.plus.com
 
 */
-
-#ifndef _include_h
-#define _include_h
-
-// System includes
-//#include <windows.h>
-#include <winsock2.h>
-//#include <stdlib.h>
-//#include <string.h>
-//#include <stdio.h>
-//#include <sys/types.h>
-//#include <math.h>
-#include "../../../../libs/pthreads/include/pthread.h"
-
-// Application includes
-#include "radio_defs.h"
-#include "../radio/hw_control.h"
-#include "../radio/udp_reader.h"
-#include "../radio/udp_writer.h"
-#include "../radio/cc_in.h"
-#include "../radio/cc_out.h"
-#include "../radio/seq_check.h"
-
-#endif
