@@ -25,103 +25,84 @@ bob@bobcowdery.plus.com
 
 */
 
-int MAX_SEQ = 0;
-int EP2_SEQ = 0;
-int EP4_SEQ = 0;
-int EP6_SEQ = 0;
+unsigned int MAX_SEQ = 0;
+unsigned int EP2_SEQ = 0;
+unsigned int EP4_SEQ = 0;
+unsigned int EP6_SEQ = 0;
+unsigned int EP2_SEQ_CHK = -1;
+unsigned char be_seq[4] = { 0,0,0,0 };
 
+// Set MAX_SEQ to unsigned int (32 bit) max value
 void seq_init() {
-	MAX_SEQ = (int)pow(2, 32);
+	MAX_SEQ = (unsigned int)pow(2, 32);
 }
 
-int next_seq(int seq) {
-	int new_seq;
-	if (new_seq = seq++ > MAX_SEQ)
+// Convert a 4 byte sequence in BE to an unsigned int LE
+unsigned int big_to_little_endian(unsigned char* big_endian) {
+	unsigned int little_endian = 
+		((big_endian[3]) & 0xff) |			// move byte 3 to byte 0
+		((big_endian[2]) & 0xff00) |		// move byte 2 to byte 1
+		((big_endian[1]) & 0xff0000) |		// move byte 1 to byte 2
+		((big_endian[0]) & 0xff000000);		// move byte 0 to byte 3
+	return little_endian;
+}
+
+// Convert an unsigned int LE to a  4 byte sequence in BE
+unsigned char* little_to_big_endian(unsigned int little_endian) {
+	be_seq[3] = little_endian & 0xff;		// move byte 3 to byte 0
+	be_seq[2] = little_endian & 0xff00;		// move byte 2 to byte 1
+	be_seq[1] = little_endian & 0xff0000;	// move byte 1 to byte 2
+	be_seq[0] = little_endian & 0xff000000;	// move byte 0 to byte 3
+	return be_seq;
+}
+
+// Next sequence number cyclic
+unsigned int next_seq(unsigned int seq) {
+	// This is a little endian seq number
+	unsigned int new_seq;
+	if ((new_seq = seq++) > MAX_SEQ)
 		return 0;
 	else
 		return new_seq;
 }
 
-int next_ep2_seq() {
-	EP2_SEQ = next_seq(EP2_SEQ);
-	// Return this as a byte array?
+// Calculate and return next seq as a BE byte array
+unsigned char* next_ep2_seq() {
+	// Bump seq
+	EP2_SEQ = next_seq(big_to_little_endian(EP2_SEQ));
+	// Return this as a byte array in BE format
+	return little_to_big_endian(EP2_SEQ);
 }
 
-int next_ep4_seq() {
-	EP4_SEQ = next_seq(EP4_SEQ);
-	// Return this as a byte array?
+unsigned char*  next_ep4_seq() {
+	// Bump seq
+	EP4_SEQ = next_seq(big_to_little_endian(EP4_SEQ));
+	// Return this as a byte array in BE format
+	return little_to_big_endian(EP4_SEQ);
 }
 
-int next_ep6_seq() {
-	EP6_SEQ = next_seq(EP6_SEQ);
-	// Return this as a byte array?
+unsigned char*  next_ep6_seq() {
+	// Bump seq
+	EP6_SEQ = next_seq(big_to_little_endian(EP6_SEQ));
+	// Return this as a byte array in BE format
+	return little_to_big_endian(EP6_SEQ);
 }
 
-int check_ep2_seq(int seq) {
-
+// Check incoming EP2 seq number
+void check_ep2_seq(unsigned char* ep2) {
+	unsigned int seq = big_to_little_endian(ep2);
+	if (EP2_SEQ_CHK == -1) {
+		// First time so set to given sequence
+		EP2_SEQ_CHK = seq;
+	}
+	else if (seq == 0) {
+		// Cycled
+		EP2_SEQ_CHK = 0;
+	}
+	else if (EP2_SEQ_CHK++ != seq) {
+		// Oops
+		printf("Seq error, expected %d, got %d!", EP2_SEQ_CHK, seq);
+		// Reset
+		EP2_SEQ_CHK = seq;
+	}
 }
-
-\ Sequence state
-2 32 ^ var, max_seq
-0 var, ep2_seq_no
-- 1 var, ep2_seq_chk
-0 var, ep4_seq_no
-0 var, ep6_seq_no
-
-\ Get next outgoing sequence number
-	: seq_com
-	1 n : +dup
-	max_seq @ n : >
-	if drop 0 then
-		;
-\ for EP2
-	: next_ep2_seq
-	ep2_seq_no @
-	seq_com
-	ep2_seq_no !
-	a:new 0 ep2_seq_no @ a : !"I" pack
-	;
-\ for EP4
-	: next_ep4_seq
-	ep4_seq_no @
-	seq_com
-	ep4_seq_no !
-	a:new 0 ep4_seq_no @ a : !"I" pack
-	;
-\ for EP6
-	: next_ep6_seq
-	ep6_seq_no @
-	seq_com
-	ep6_seq_no !
-	a:new 0 ep6_seq_no @ a : !"I" pack
-	;
-
-\ Check incoming sequence number
-\ for EP2
-	: check_ep2_seq	\ seq -- f
-	dup
-	ep2_seq_chk @ - 1 n: = if
-	\ First time so accept the current sequence
-	ep2_seq_chk !
-	drop true
-	else
-	\ Running sequence
-	1 ep2_seq_chk n : +!
-	ep2_seq_chk @ n : = if
-	drop true
-	else
-	\ Not as expected
-	dup 0 n: = if
-	\ Cycled by to zero
-	"Seq reset" log
-	0 ep2_seq_chk !
-	drop true
-	else
-	\ Missed one or more packets!
-	"Seq error - " . "Exp: ".ep2_seq_chk @ . " Got: ".dup.cr
-	ep2_seq_chk !
-	false
-	then
-	then
-	then
-	;
