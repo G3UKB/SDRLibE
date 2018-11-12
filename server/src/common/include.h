@@ -45,6 +45,6 @@ bob@bobcowdery.plus.com
 #include "../radio/udp_writer.h"
 #include "../radio/cc_in.h"
 #include "../radio/cc_out.h"
-#include "../radio/seq_check.h"
+#include "../radio/seq_proc.h"
 
 #endif
