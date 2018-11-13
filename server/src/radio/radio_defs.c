@@ -26,17 +26,16 @@ bob@bobcowdery.plus.com
 // Includes
 #include "../common/include.h"
 
-/*
 int channel_number = 0;
 int display_number = 0;
 int input_samplerate = 48000;
 int output_samplerate = 48000;
 
 // Temporary buffers
-static unsigned char *iq = NULL;
-static unsigned char *mic = NULL;
-static char *local_mic = NULL;
-static float *pan = NULL;
+unsigned char *iq = NULL;
+unsigned char *mic = NULL;
+char *local_mic = NULL;
+float *pan = NULL;
 int pan_sz;
 int allocated = FALSE;
 char message[100];
@@ -81,4 +80,3 @@ float wbs_window[WBS_SIZE];
 //float wbs_gain_adjust = 55.0;   // This should be configured
 float wbs_gain_adjust = 85.0;   // This should be configured
 fftw_plan wbs_plan;
-*/
