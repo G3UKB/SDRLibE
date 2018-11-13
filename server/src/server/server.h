@@ -25,26 +25,10 @@ The authors can be reached by email at:
 
 */
 
-
 #ifndef _server_h
 #define _server_h
 
-/*
-#include <math.h>
-#include "../../../../libs/fftw/fftw3.h"
-#include "../helpers/defs.h"
-#include "../helpers/utils.h"
-#include "../ringbuffer/ringb.h"
-#define HAVE_STRUCT_TIMESPEC
-#include "../../../../libs/pthreads/include/pthread.h"
-#include "../../../wdsp_win/src/channel.h"
-#include "../../../wdsp_win/src/wisdom.h"
-#include "../../../wdsp_win/src/bandpass.h"
-#include "../audio/local_audio.h"
-*/
-
 // Data structures
-// Interface between Cython and C Server
 typedef struct Tuple {
 	int inst_id;
 	int ch_id;

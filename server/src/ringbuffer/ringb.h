@@ -28,11 +28,6 @@
 #ifndef _ringb_h
 #define _ringb_h
 
-/*
-#include <stdlib.h>
-#include <sys/types.h>
-*/
-
 typedef struct
 {
   char *buf;

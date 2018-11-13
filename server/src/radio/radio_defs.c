@@ -1,7 +1,7 @@
 /*
 radio_defs.c
 
-Common definitions for the SDRLibE library
+Common allocations for the SDRLibE library
 Copyright (C) 2018 by G3UKB Bob Cowdery
 
 This program is free software; you can redistribute it and/or modify

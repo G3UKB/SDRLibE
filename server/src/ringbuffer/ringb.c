@@ -24,13 +24,6 @@
     Copyright (C) 2004, 2005, 2006 by Frank Brickle, AB2KT and Bob McGwier, N4HY
 */
 
-/*
-#include "ringb.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-*/
-
 // Includes
 #include "../common/include.h"
 
