@@ -49,6 +49,7 @@ bob@bobcowdery.plus.com
 #include "../json/cJSON.h"
 // Lib interface
 #include "../server/server.h"
+#include "../server/dsp_man.h"
 // Pipeline processing
 #include "../pipeline/pipeline.h"
 // Local audio
