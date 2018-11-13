@@ -32,10 +32,14 @@ Server processing called from the Cython layer to implement:
 	3. Forwarded API implementation for pipeline parameters
 */
 
-#include "server.h"
-#include "../pipeline/pipeline.h"
-#include "../json/cJSON.h"
+//#include "server.h"
+//#include "../pipeline/pipeline.h"
+//#include "../json/cJSON.h"
 
+// Includes
+#include "../common/include.h"
+
+/*
 #define M_PI 3.14159265358979323846
 
 int channel_number = 0;
@@ -92,6 +96,7 @@ float wbs_window [WBS_SIZE];
 //float wbs_gain_adjust = 55.0;   // This should be configured
 float wbs_gain_adjust = 85.0;   // This should be configured
 fftw_plan wbs_plan;
+*/
 
 // ======================================================
 // Server operations

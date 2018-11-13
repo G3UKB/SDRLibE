@@ -25,6 +25,9 @@ bob@bobcowdery.plus.com
 
 */
 
+// Includes
+#include "../common/include.h"
+
 unsigned int MAX_SEQ = 0;
 unsigned int EP2_SEQ = 0;
 unsigned int EP4_SEQ = 0;

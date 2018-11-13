@@ -34,6 +34,8 @@ The authors can be reached by email at:
 //    #define DLL_EXPORT __declspec(dllimport)
 //#endif
 
+#define HAVE_STRUCT_TIMESPEC
+
 #define TRUE 1
 #define FALSE 0
 

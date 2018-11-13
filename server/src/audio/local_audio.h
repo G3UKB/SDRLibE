@@ -25,6 +25,7 @@ The authors can be reached by email at:
 
 */
 
+/*
 #include <stdio.h>
 #include <string.h>
 
@@ -33,6 +34,7 @@ The authors can be reached by email at:
 #define HAVE_STRUCT_TIMESPEC
 #include "../../../../libs/pthreads/include/pthread.h"
 #include "../ringbuffer/ringb.h"
+*/
 
 #ifndef _local_audio_h
 #define _local_audio_h

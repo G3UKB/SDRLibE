@@ -1,5 +1,5 @@
 /*
-radio_defs.h
+radio_defs.c
 
 Common definitions for the SDRLibE library
 Copyright (C) 2018 by G3UKB Bob Cowdery
@@ -23,27 +23,10 @@ The authors can be reached by email at:
 bob@bobcowdery.plus.com
 */
 
-#ifndef _radio_defs_h
-#define _radio_defs_h
+// Includes
+#include "../common/include.h"
 
-#define DLL_EXPORT __declspec(dllexport)
-//#define DLL_EXPORT __stdcall
-
-// Defines
-#define TRUE 1
-#define FALSE 0
-
-#define FRAME_SZ 1032
-#define DATA_SZ 504
-#define START_FRAME_1 16
-#define END_FRAME_1 520
-#define START_FRAME_2 528
-#define END_FRAME_2 1032
-#define NUM_SMPLS 126
-
-#define M_PI 3.14159265358979323846
-
-
+/*
 int channel_number = 0;
 int display_number = 0;
 int input_samplerate = 48000;
@@ -98,6 +81,4 @@ float wbs_window[WBS_SIZE];
 //float wbs_gain_adjust = 55.0;   // This should be configured
 float wbs_gain_adjust = 85.0;   // This should be configured
 fftw_plan wbs_plan;
-
-
-#endif
+*/

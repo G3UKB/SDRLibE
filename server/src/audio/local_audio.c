@@ -25,7 +25,8 @@ The authors can be reached by email at:
 
 */
 
-#include "local_audio.h"
+// Includes
+#include "../common/include.h"
 
 // Local functions
 static PaStream* open_stream(UserData *paud, int direction, char* hostapi, char *device);

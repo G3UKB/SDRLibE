@@ -28,12 +28,14 @@ The authors can be reached by email at:
 #ifndef _pipeline_h
 #define _pipeline_h
 
+/*
 #include "../helpers/defs.h"
 #include "../helpers/utils.h"
 #include "../server/server.h"
 #include "../ringbuffer/ringb.h"
 #define HAVE_STRUCT_TIMESPEC
 #include "../../../../libs/pthreads/include/pthread.h"
+*/
 
 // Transforms data structure maintains the data transforms between the input and output ring buffers
 // The read size must be divisable by 8 to maintain proper boundaries for decoding as the data is organised

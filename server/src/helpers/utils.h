@@ -28,11 +28,13 @@ The authors can be reached by email at:
 //#include "Python.h"
 //#include "pystate.h"
 
+/*
 #include "../ringbuffer/ringb.h"
 #include "../audio/local_audio.h"
 
 #define TRUE 1
 #define FALSE 0
+*/
 
 #ifndef _utils_h
 #define _utils_h

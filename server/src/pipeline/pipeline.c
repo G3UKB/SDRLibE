@@ -32,7 +32,8 @@ Pipeline processing called from the Cython layer to implement:
 	3. Encoding of USB format frames
 */
 
-#include "pipeline.h"
+// Includes
+#include "../common/include.h"
 
 // Local functions
 static void *pipeline_imp(void *data);

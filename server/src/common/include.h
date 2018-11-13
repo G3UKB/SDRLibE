@@ -29,16 +29,31 @@ bob@bobcowdery.plus.com
 #define _include_h
 
 // System includes
-//#include <windows.h>
+#include <stdio.h>
 #include <winsock2.h>
-//#include <stdlib.h>
-//#include <string.h>
-//#include <stdio.h>
-//#include <sys/types.h>
 #include <math.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+
+// Libs
 #include "../../../../libs/pthreads/include/pthread.h"
+#include "../../../../libs/fftw/fftw3.h"
+#include "../../../../libs/portaudio/include/portaudio.h"
 
 // Application includes
+// Helpers
+#include "../helpers/defs.h"
+#include "../helpers/utils.h"
+#include "../ringbuffer/ringb.h"
+#include "../json/cJSON.h"
+// Lib interface
+#include "../server/server.h"
+// Pipeline processing
+#include "../pipeline/pipeline.h"
+// Local audio
+#include "../audio/local_audio.h"
+// Radio hardware interfacing and processing
 #include "radio_defs.h"
 #include "../radio/hw_control.h"
 #include "../radio/udp_reader.h"
@@ -46,5 +61,11 @@ bob@bobcowdery.plus.com
 #include "../radio/cc_in.h"
 #include "../radio/cc_out.h"
 #include "../radio/seq_proc.h"
+#include "../radio/encoder.h"
+#include "../radio/decoder.h"
+// WDSP
+#include "../../../wdsp_win/src/channel.h"
+#include "../../../wdsp_win/src/wisdom.h"
+#include "../../../wdsp_win/src/bandpass.h"
 
 #endif

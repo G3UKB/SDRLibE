@@ -31,7 +31,8 @@ Utility functions called from the Cython layer to implement:
     2. Time critical processing
 */
 
-# include "utils.h"
+// Includes
+#include "../common/include.h"
 
 void c_set_freq(double freq, char *ptr_bytes) {
 
