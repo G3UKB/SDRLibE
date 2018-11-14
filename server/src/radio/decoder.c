@@ -27,18 +27,16 @@ bob@bobcowdery.plus.com
 // Includes
 #include "../common/include.h"
 
-int frame_decode(int n_smpls, int n_rx, int rate, int in_sz, char *ptr_in_bytes, int out_sz, char *ptr_out_bytes) {
+void frame_decode(int n_smpls, int n_rx, int rate, int in_sz, char *ptr_in_bytes) {
 
 	/* Perform data exchange
 	*
 	* Arguments:
 	*  n_smpls			--	number of I/Q samples per frame per receiver
-	*  n_rx			--	number of receivers
-	*  rate			-- 	48000/96000/192000/384000
-	* 	in_sz			--	size of input data buffer
-	*  ptr_in_bytes   		--  	ptr to the input data
-	*  out_sz			--	size of output data buffer
-	*  ptr_out_bytes  		--  	pointer to a byte array to receive output data
+	*  n_rx				--	number of receivers
+	*  rate				-- 	48000/96000/192000/384000
+	* in_sz				--	size of input data buffer
+	*  ptr_in_bytes   	--  ptr to the input data
 	*/
 
 	// Data exchange operates on the ring buffers.
@@ -252,13 +250,4 @@ int frame_decode(int n_smpls, int n_rx, int rate, int in_sz, char *ptr_in_bytes,
 		pthread_cond_signal(&pipeline_con);
 		pthread_mutex_unlock(&pipeline_mutex);
 	}
-
-	// Check for output data
-	if (ringb_read_space(rb_out) >= (unsigned int)out_sz) {
-		// Enough to satisfy the required output block
-		ringb_read(rb_out, ptr_out_bytes, (unsigned int)out_sz);
-		return TRUE;
-	}
-
-	return FALSE;
 }

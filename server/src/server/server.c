@@ -262,6 +262,14 @@ int DLL_EXPORT c_server_init(char* args) {
     wbs_plan = fftw_plan_dft_1d(WBS_SIZE*2, wbs_in, wbs_out, FFTW_FORWARD, FFTW_ESTIMATE);
     hanning_window(WBS_SIZE);
 
+	// Create the socket 
+	// Initialise socket lib
+	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+		strcpy(last_error, "Failed to initialise winsock!");
+		return -1;
+	}
+	int sd = open_bc_socket();
+
 	// Now open the DSP channels
 	// void c_server_open_channel(int ch_type, int channel, int iq_size, int mic_size, int in_rate, int out_rate, int tdelayup, int tslewup, int tdelaydown, int tslewdown)
 	// RX channels
@@ -279,7 +287,8 @@ int DLL_EXPORT c_server_init(char* args) {
 	}
 
 	// Init the UDP reader and writer
-	reader_init();
+	reader_init( sd, pargs->num_rx, pargs->general.iq_blk_sz, pargs->general.in_rate );
+	writer_init();
 
 	send_message("c.server", "Server initialised");
 

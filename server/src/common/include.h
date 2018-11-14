@@ -48,6 +48,7 @@ bob@bobcowdery.plus.com
 #include "../ringbuffer/ringb.h"
 #include "../json/cJSON.h"
 // Lib interface
+#include "../radio/sockets.h"
 #include "../server/server.h"
 #include "../server/dsp_man.h"
 // Pipeline processing

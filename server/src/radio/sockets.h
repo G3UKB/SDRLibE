@@ -1,7 +1,7 @@
 /*
-decoder.h
+sockets.h
 
-Decode a radio frame
+manage UDP sockets
 
 Copyright (C) 2018 by G3UKB Bob Cowdery
 
@@ -28,4 +28,5 @@ bob@bobcowdery.plus.com
 #include "../common/include.h"
 
 // Prototypes
-void frame_decode(int n_smpls, int n_rx, int rate, int in_sz, char *ptr_in_bytes);
+int open_bc_socket();
+int revert_sd(int sd);

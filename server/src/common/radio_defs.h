@@ -30,6 +30,7 @@ bob@bobcowdery.plus.com
 #define DLL_EXPORT __declspec(dllexport)
 //#define DLL_EXPORT __stdcall
 
+#define LOCAL_SERVER_PORT 1024
 #define FRAME_SZ 1032
 #define DATA_SZ 504
 #define START_FRAME_1 16

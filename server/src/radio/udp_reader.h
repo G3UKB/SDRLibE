@@ -35,11 +35,14 @@ pthread_t udp_reader_thd;
 typedef struct UDPReaderThreadData {
 	int run;
 	int terminate;
+	int num_rx;
+	int num_smpls;
+	int rate;
 	int socket;
-	struct sockaddr_in *srv_addr;
 }UDPReaderThreadData;
 
 // Prototypes
+void reader_init(int sd, int num_rx, int num_smpls, int rate);
 void *udp_reader_imp(void* data);
 
 #endif

@@ -39,7 +39,7 @@ pthread_t reader_thd;
 UDPReaderThreadData *udp_reader_td = NULL;
 
 // Initialise reader thread
-void reader_init() {
+void reader_init(int sd, int num_rx, int num_smpls, int rate) {
 	/* Initialise reader
 	*
 	* Arguments:
@@ -53,9 +53,11 @@ void reader_init() {
 	// Init the thread data
 	udp_reader_td->run = FALSE;
 	udp_reader_td->terminate = FALSE;
-	//td->socket;
-	//td->srv_addr;
-
+	udp_reader_td->socket= sd;
+	udp_reader_td->num_rx = num_rx;
+	udp_reader_td->num_smpls = num_smpls;
+	udp_reader_td->rate = rate;
+	
 	// Create the reader thread
 	rc = pthread_create(&reader_thd, NULL, udp_reader_imp, (void *)udp_reader_td);
 	if (rc) {
@@ -103,15 +105,13 @@ int reader_terminate() {
 void *udp_reader_imp(void* data){
     // Get our thread parameters
 	UDPReaderThreadData* td = (UDPReaderThreadData*)data;
-    int sd = td->socket;
-    struct sockaddr_in *srv_addr = td->srv_addr;
 
     printf("Started UDP reader thread\n");
 
 	while (!td->terminate) {
 		if (td->run && !td->terminate) {
-			// Wile running we stay in the receive loop
-			udprecvdata(td, srv_addr);
+			// While running we stay in the receive loop
+			udprecvdata(td);
 		}
 		else {
 			Sleep(0.1);
@@ -127,8 +127,11 @@ static void udprecvdata(UDPReaderThreadData* td) {
     int i,j,n;
     unsigned char acc[DATA_SZ*2];
 
+	int num_rx = td->num_rx;
+	int num_sampls = td->num_smpls;
+	int rate = td->rate;
 	int sd = td->socket;
-	struct sockaddr_in *srv_addr = td->srv_addr;
+	struct sockaddr_in *srv_addr;
 	int addr_sz = sizeof(*srv_addr);
 
 	// Loop receiving stream from radio
@@ -146,9 +149,9 @@ static void udprecvdata(UDPReaderThreadData* td) {
 			for (i = START_FRAME_2, j = DATA_SZ; i < END_FRAME_2; i++, j++) {
 				frame_data[j] = frame[i];
 			}
-			// Dispatch the frame for processing
-
-			// If output data then format and write to radio
+			// Decode the frame and dispatch for processing
+			// void frame_decode(int n_smpls, int n_rx, int rate, int in_sz, char *ptr_in_bytes) 
+			frame_decode(num_rx, num_sampls, rate, DATA_SZ, frame_data);
 		}
 	}
 }
