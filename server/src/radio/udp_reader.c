@@ -27,17 +27,82 @@ The authors can be reached by email at:
 // Includes
 #include "../common/include.h"
 
-// Forward refs
-static void udprecvdata(udp_reader_thread_data* td);
+// Local funcs
+static void udprecvdata(UDPReaderThreadData* td);
 
 // Module vars
 unsigned char frame[FRAME_SZ];
 unsigned char frame_data[DATA_SZ * 2];
+// Threads
+pthread_t reader_thd;
+// Structure pointers
+UDPReaderThreadData *udp_reader_td = NULL;
+
+// Initialise reader thread
+void reader_init() {
+	/* Initialise reader
+	*
+	* Arguments:
+	*
+	*/
+
+	int rc;
+
+	// Allocate thread data structure
+	udp_reader_td = (ThreadData *)safealloc(sizeof(UDPReaderThreadData), sizeof(char), "READER_TD_STRUCT");
+	// Init the thread data
+	udp_reader_td->run = FALSE;
+	udp_reader_td->terminate = FALSE;
+	//td->socket;
+	//td->srv_addr;
+
+	// Create the reader thread
+	rc = pthread_create(&reader_thd, NULL, udp_reader_imp, (void *)udp_reader_td);
+	if (rc) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+// Start reader thread
+void reader_start() {
+	udp_reader_td->run = TRUE;
+}
+
+// Start reader thread
+void reader_stop() {
+	udp_reader_td->run = FALSE;
+}
+
+// Terminate the reader
+int reader_terminate() {
+	/* Terminate reader thread
+	*
+	* Arguments:
+	*
+	*/
+
+	int counter;
+
+	udp_reader_td->run = FALSE;
+	udp_reader_td->terminate = TRUE;
+
+	// Signal the thread to ensure it sees the terminate
+	
+	// Wait for the thread to exit
+	pthread_join(reader_thd, NULL);
+	
+	// Free thread data
+	safefree((char *)udp_reader_td);
+	
+	return TRUE;
+}
 
 // Thread entry point for processing
 void *udp_reader_imp(void* data){
     // Get our thread parameters
-    udp_reader_thread_data* td = (udp_reader_thread_data*)data;
+	UDPReaderThreadData* td = (UDPReaderThreadData*)data;
     int sd = td->socket;
     struct sockaddr_in *srv_addr = td->srv_addr;
 
@@ -57,7 +122,7 @@ void *udp_reader_imp(void* data){
     return NULL;
 }
 
-static void udprecvdata(udp_reader_thread_data* td) {
+static void udprecvdata(UDPReaderThreadData* td) {
 
     int i,j,n;
     unsigned char acc[DATA_SZ*2];

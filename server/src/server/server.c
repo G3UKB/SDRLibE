@@ -262,7 +262,7 @@ int DLL_EXPORT c_server_init(char* args) {
     wbs_plan = fftw_plan_dft_1d(WBS_SIZE*2, wbs_in, wbs_out, FFTW_FORWARD, FFTW_ESTIMATE);
     hanning_window(WBS_SIZE);
 
-	// Now open the DSP and display channels
+	// Now open the DSP channels
 	// void c_server_open_channel(int ch_type, int channel, int iq_size, int mic_size, int in_rate, int out_rate, int tdelayup, int tslewup, int tdelaydown, int tslewdown)
 	// RX channels
 	for (int ch = 0; i < pargs->num_rx; ch++) {
@@ -271,12 +271,15 @@ int DLL_EXPORT c_server_init(char* args) {
 	// TX channel
 	c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
 	
-	// Display channels
+	// and display channels
 	// void c_server_open_display(int display, int fft_size, int win_type, int sub_spans, int in_sz, int display_width, int average_mode, int over_frames, int sample_rate, int frame_rate)
 	for (int ch = 0; i < pargs->num_rx; ch++) {
 		// Note we do not have all the parameters for this including the display width so more info will be needed in init and dynamically for resize etc.
 		c_server_open_display(pargs->disp[ch].ch_id, 2048, 0, 1, 1024, 500, 3, 10, 4800, 10);
 	}
+
+	// Init the UDP reader and writer
+	reader_init();
 
 	send_message("c.server", "Server initialised");
 
@@ -285,12 +288,14 @@ int DLL_EXPORT c_server_init(char* args) {
 
 int DLL_EXPORT c_server_start() {
 	/*
-	 * Start the pipeline
+	 * Start the services
 	 *
 	 * Arguments:
 	 *
 	 */
 
+	reader_start();
+	writer_start();
 	pipeline_start();
 	return TRUE;
 }
@@ -316,6 +321,10 @@ int DLL_EXPORT c_server_terminate() {
 	 */
 
 	// Stop and terminate the pipeline
+	reader_stop();
+	reader_terminate();
+	writer_stop();
+	writer_terminate();
 	pipeline_stop();
 	pipeline_terminate();
 	// Free memory

@@ -41,11 +41,75 @@ pthread_mutex_t fcd_mutex = PTHREAD_MUTEX_INITIALIZER;
 int freq_hz;
 int last_freq = -1;
 
-// Safe set frequency
-void fcd_set_freq(unsigned int f) {
-    pthread_mutex_lock(&fcd_mutex);
-    freq_hz = f;
-    pthread_mutex_unlock(&fcd_mutex);
+// Local funcs
+
+// Module vars
+unsigned char frame[FRAME_SZ];
+unsigned char frame_data[DATA_SZ * 2];
+// Threads
+pthread_t writer_thd;
+// Structure pointers
+UDPWriterThreadData *udp_writer_td = NULL;
+
+// Initialise writer thread
+void writer_init() {
+	/* Initialise writer
+	*
+	* Arguments:
+	*
+	*/
+
+	int rc;
+
+	// Allocate thread data structure
+	udp_writer_td = (UDPWriterThreadData *)safealloc(sizeof(UDPWriterThreadData), sizeof(char), "WRITER_TD_STRUCT");
+	// Init the thread data with the Pipeline and Transforms pointers
+	udp_writer_td->run = FALSE;
+	udp_writer_td->terminate = FALSE;
+	//td->socket;
+	//td->srv_addr;
+
+	// Create the reader thread
+	rc = pthread_create(&writer_thd, NULL, udp_writer_imp, (void *)udp_writer_td);
+	if (rc) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+// Start writer thread
+void writer_start() {
+	udp_writer_td->run = TRUE;
+}
+
+// Start writer thread
+void writer_stop() {
+	udp_writer_td->run = FALSE;
+}
+
+// Terminate the writer
+int writer_terminate() {
+	/* Terminate writer thread
+	*
+	* Arguments:
+	*
+	*/
+
+	int counter;
+
+	udp_writer_td->run = FALSE;
+	udp_writer_td->terminate = TRUE;
+
+	// Signal the thread to ensure it sees the terminate
+
+	// Wait for the thread to exit
+	pthread_join(writer_thd, NULL);
+
+	// Free thread data
+	safefree((char *)udp_writer_td);
+
+	return TRUE;
 }
 
 // Thread entry point for UDP writer processing
@@ -53,7 +117,7 @@ void *udp_writer_imp(void* data){
     unsigned int new_freq;
 
     // Get our thread parameters
-    udp_writer_thread_data* td = (udp_writer_thread_data*)data;
+	UDPWriterThreadData* td = (UDPWriterThreadData*)data;
     int sd = td->socket;
     struct sockaddr_in *srv_addr = td->srv_addr;
 
@@ -95,11 +159,3 @@ static void set_freq(int offset, unsigned int freq, unsigned char *buffer) {
     buffer[offset+4] = freq & 0xff;
 }
 
-// Safe get frequency
-static unsigned int fcd_get_freq() {
-    int f;
-    pthread_mutex_lock(&fcd_mutex);
-    f = freq_hz;
-    pthread_mutex_unlock(&fcd_mutex);
-    return f;
-}

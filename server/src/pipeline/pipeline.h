@@ -28,15 +28,6 @@ The authors can be reached by email at:
 #ifndef _pipeline_h
 #define _pipeline_h
 
-/*
-#include "../helpers/defs.h"
-#include "../helpers/utils.h"
-#include "../server/server.h"
-#include "../ringbuffer/ringb.h"
-#define HAVE_STRUCT_TIMESPEC
-#include "../../../../libs/pthreads/include/pthread.h"
-*/
-
 // Transforms data structure maintains the data transforms between the input and output ring buffers
 // The read size must be divisable by 8 to maintain proper boundaries for decoding as the data is organised
 // as 2x24 bit (I/Q) and 1x16 bit (Mic).
@@ -101,13 +92,5 @@ int pipeline_start();
 int pipeline_run_display(int run_state);
 int pipeline_stop();
 int pipeline_terminate();
-/*static void *pipeline_imp(void *data);
-static void init_transform(Pipeline *td);
-static void uninit_transform(Pipeline *td);
-static void do_decode(Pipeline *td, Transforms *ptr);
-static void do_display(Pipeline *ppl, Transforms *ptr);
-static void do_dsp(Pipeline *td, Transforms *ptr);
-static void do_local_audio(Pipeline *ppl, Transforms *ptr);
-static void do_encode(Pipeline *td, Transforms *ptr);*/
 
 #endif

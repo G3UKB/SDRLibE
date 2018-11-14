@@ -32,15 +32,14 @@ The authors can be reached by email at:
 pthread_t udp_reader_thd;
 
 // Thread data structure for UDP reader/writer
-typedef struct udp_reader_thread_data {
+typedef struct UDPReaderThreadData {
 	int run;
 	int terminate;
 	int socket;
 	struct sockaddr_in *srv_addr;
-}udp_reader_thread_data;
-udp_reader_thread_data *udp_reader_td;
+}UDPReaderThreadData;
 
 // Prototypes
-void *udp_reader_imp();
+void *udp_reader_imp(void* data);
 
 #endif
