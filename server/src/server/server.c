@@ -361,6 +361,9 @@ int DLL_EXPORT c_server_configure(char* args) {
 	// Init sequence processing
 	seq_init();
 
+	// Init the CC bytes with defaults
+	cc_out_init();
+
 	send_message("c.server", "Server initialised");
 	c_server_configured = TRUE;
 	return TRUE;

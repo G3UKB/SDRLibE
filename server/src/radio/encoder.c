@@ -47,6 +47,8 @@ void encode_output_data(char *data_frame, char *packet_buffer) {
 	*/
 
 	int i,j;
+	char *cc;
+
 	// ToDo - defines for all constants
 	// Header
 	packet_buffer[0] = 0xef;
@@ -63,7 +65,9 @@ void encode_output_data(char *data_frame, char *packet_buffer) {
 	for( i = 8; i < 10; i++ ) {
 		packet_buffer[i] = 0x7f;
 	}
-	// Forgot cc bytes
+	// CC bytes
+	cc = cc_out_next_seq();
+	//1-5
 	// Frame data
 	for (i = 11, j = 0; i < 11+DATA_SZ; i++, j++) {
 		packet_buffer[i] = data_frame[i];
@@ -73,7 +77,9 @@ void encode_output_data(char *data_frame, char *packet_buffer) {
 	for (i = 11+DATA_SZ ; i < 11 + 3 + DATA_SZ; i++) {
 		packet_buffer[i] = 0x7f;
 	}
-	// Forgot cc bytes
+	// CC bytes
+	cc = cc_out_next_seq();
+	// 1-5
 	// Frame data
 	for (i = 11 + 3 + DATA_SZ, j = 0; i < 11 + 3 + (2*DATA_SZ); i++, j++) {
 		packet_buffer[i] = data_frame[j];
