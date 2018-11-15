@@ -40,6 +40,7 @@ typedef struct UDPWriterThreadData {
 }UDPWriterThreadData;
 
 // Prototypes
+void writer_init(int sd, struct sockaddr_in *srv_addr);
 void *udp_writer_imp(void* data);
 
 #endif

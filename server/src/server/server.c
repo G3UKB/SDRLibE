@@ -356,7 +356,7 @@ int DLL_EXPORT c_server_configure(char* args) {
 
 	// Init the UDP reader and writer
 	reader_init( sd, srv_addr, pargs->num_rx, pargs->general.iq_blk_sz, pargs->general.in_rate );
-	writer_init();
+	writer_init(sd, srv_addr);
 
 	// Init sequence processing
 	seq_init();

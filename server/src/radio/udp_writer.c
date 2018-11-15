@@ -27,22 +27,6 @@ The authors can be reached by email at:
 // Includes
 #include "../common/include.h"
 
-short *smpl_buffer;
-unsigned char packet_buffer[FRAME_SZ];
-
-// Local functions
-static void set_metis_header(unsigned char *buffer);
-static unsigned int fcd_get_freq();
-static void set_usb_header(int offset, unsigned char *buffer);
-static void set_freq(int offset, unsigned int freq, unsigned char *buffer);
-
-// Module vars
-pthread_mutex_t fcd_mutex = PTHREAD_MUTEX_INITIALIZER;
-int freq_hz;
-int last_freq = -1;
-
-// Local funcs
-
 // Module vars
 unsigned char frame[FRAME_SZ];
 unsigned char frame_data[DATA_SZ * 2];
@@ -52,7 +36,7 @@ pthread_t writer_thd;
 UDPWriterThreadData *udp_writer_td = NULL;
 
 // Initialise writer thread
-void writer_init() {
+void writer_init(int sd, struct sockaddr_in *srv_addr) {
 	/* Initialise writer
 	*
 	* Arguments:
@@ -66,8 +50,8 @@ void writer_init() {
 	// Init the thread data with the Pipeline and Transforms pointers
 	udp_writer_td->run = FALSE;
 	udp_writer_td->terminate = FALSE;
-	//td->socket;
-	//td->srv_addr;
+	udp_writer_td->socket = sd;
+	udp_writer_td->srv_addr = srv_addr;
 
 	// Create the writer thread
 	rc = pthread_create(&writer_thd, NULL, udp_writer_imp, (void *)udp_writer_td);
@@ -125,37 +109,22 @@ void *udp_writer_imp(void* data){
 
     while (td->terminate == FALSE) {
         if (td->run) {
-			;
+			// See if enough data available in the ring buffer
+			if (ringb_read_space(rb_out) >= DATA_SZ*2) {
+				// Enough to satisfy the required output block
+				ringb_read(rb_out, frame_data, DATA_SZ * 2);
+				// Encode into a frame
+				encode_output_data(frame_data, frame);
+				// Dispatch to radio
+				if (sendto(sd, (const char*)frame, FRAME_SZ, 0, (struct sockaddr*) srv_addr, sizeof(*srv_addr)) == -1) {
+					printf("UDP dispatch failed!\n");
+				}
+			}
         } else {
             Sleep(0.1);
         }
     }
     printf("UDP Writer thread exiting...\n");
     return NULL;
-}
-
-//===================================================================
-// Private functions
-// Set Metis header bytes
-static void set_metis_header(unsigned char *buffer) {
-    buffer[0] = 0xEF;
-    buffer[1] = 0xFE;
-    buffer[2] = 0x01;   //Commasnd byte
-    buffer[3] = 0x02;   // Endpoint
-}
-// Set UDP sync bytes
-static void set_usb_header(int offset, unsigned char *buffer) {
-    buffer[offset] = 0x7f;
-    buffer[offset+1] = 0x7f;
-    buffer[offset+2] = 0x7f;
-}
-// Set frequency bytes for RX1
-static void set_freq(int offset, unsigned int freq, unsigned char *buffer) {
-    buffer[offset] = 0x02;  // Freq RX1
-    // Pack as big endian
-    buffer[offset+1] = (freq >> 24) & 0xff;
-    buffer[offset+2] = (freq >> 16) & 0xff;
-    buffer[offset+3] = (freq >> 8) & 0xff;
-    buffer[offset+4] = freq & 0xff;
 }
 
