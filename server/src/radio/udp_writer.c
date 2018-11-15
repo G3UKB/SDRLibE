@@ -69,7 +69,7 @@ void writer_init() {
 	//td->socket;
 	//td->srv_addr;
 
-	// Create the reader thread
+	// Create the writer thread
 	rc = pthread_create(&writer_thd, NULL, udp_writer_imp, (void *)udp_writer_td);
 	if (rc) {
 		return FALSE;

@@ -358,6 +358,9 @@ int DLL_EXPORT c_server_configure(char* args) {
 	reader_init( sd, srv_addr, pargs->num_rx, pargs->general.iq_blk_sz, pargs->general.in_rate );
 	writer_init();
 
+	// Init sequence processing
+	seq_init();
+
 	send_message("c.server", "Server initialised");
 	c_server_configured = TRUE;
 	return TRUE;

@@ -122,6 +122,8 @@ int DLL_EXPORT c_server_init();
 int DLL_EXPORT c_server_discover();
 int DLL_EXPORT c_server_configure(char* args);
 int DLL_EXPORT c_server_start();
+int DLL_EXPORT c_radio_start();
+int DLL_EXPORT c_radio_stop();
 int DLL_EXPORT c_server_run_display(int display_run);
 int DLL_EXPORT c_server_terminate();
 //int DLL_EXPORT c_server_open_channel(int ch_type, int ch_instance, int iq_size, int mic_size, int in_rate, int out_rate, int tdelayup, int tslewup, int tdelaydown, int tslewdown);

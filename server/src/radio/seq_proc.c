@@ -35,38 +35,14 @@ unsigned int EP6_SEQ = 0;
 unsigned int EP2_SEQ_CHK = -1;
 unsigned char be_seq[4] = { 0,0,0,0 };
 
+// Local func declaration
+static unsigned int big_to_little_endian(unsigned char* big_endian);
+static unsigned char* little_to_big_endian(unsigned int little_endian);
+static unsigned int next_seq(unsigned int seq);
+
 // Set MAX_SEQ to unsigned int (32 bit) max value
 void seq_init() {
 	MAX_SEQ = (unsigned int)pow(2, 32);
-}
-
-// Convert a 4 byte sequence in BE to an unsigned int LE
-unsigned int big_to_little_endian(unsigned char* big_endian) {
-	unsigned int little_endian = 
-		((big_endian[3]) & 0xff) |			// move byte 3 to byte 0
-		((big_endian[2]) & 0xff00) |		// move byte 2 to byte 1
-		((big_endian[1]) & 0xff0000) |		// move byte 1 to byte 2
-		((big_endian[0]) & 0xff000000);		// move byte 0 to byte 3
-	return little_endian;
-}
-
-// Convert an unsigned int LE to a  4 byte sequence in BE
-unsigned char* little_to_big_endian(unsigned int little_endian) {
-	be_seq[3] = little_endian & 0xff;		// move byte 3 to byte 0
-	be_seq[2] = little_endian & 0xff00;		// move byte 2 to byte 1
-	be_seq[1] = little_endian & 0xff0000;	// move byte 1 to byte 2
-	be_seq[0] = little_endian & 0xff000000;	// move byte 0 to byte 3
-	return be_seq;
-}
-
-// Next sequence number cyclic
-unsigned int next_seq(unsigned int seq) {
-	// This is a little endian seq number
-	unsigned int new_seq;
-	if ((new_seq = seq++) > MAX_SEQ)
-		return 0;
-	else
-		return new_seq;
 }
 
 // Calculate and return next seq as a BE byte array
@@ -108,4 +84,34 @@ void check_ep2_seq(unsigned char* ep2) {
 		// Reset
 		EP2_SEQ_CHK = seq;
 	}
+}
+
+// Local functions
+// Convert a 4 byte sequence in BE to an unsigned int LE
+static unsigned int big_to_little_endian(unsigned char* big_endian) {
+	unsigned int little_endian =
+		((big_endian[3]) & 0xff) |			// move byte 3 to byte 0
+		((big_endian[2]) & 0xff00) |		// move byte 2 to byte 1
+		((big_endian[1]) & 0xff0000) |		// move byte 1 to byte 2
+		((big_endian[0]) & 0xff000000);		// move byte 0 to byte 3
+	return little_endian;
+}
+
+// Convert an unsigned int LE to a  4 byte sequence in BE
+static unsigned char* little_to_big_endian(unsigned int little_endian) {
+	be_seq[3] = little_endian & 0xff;		// move byte 3 to byte 0
+	be_seq[2] = little_endian & 0xff00;		// move byte 2 to byte 1
+	be_seq[1] = little_endian & 0xff0000;	// move byte 1 to byte 2
+	be_seq[0] = little_endian & 0xff000000;	// move byte 0 to byte 3
+	return be_seq;
+}
+
+// Next sequence number cyclic
+static unsigned int next_seq(unsigned int seq) {
+	// This is a little endian seq number
+	unsigned int new_seq;
+	if ((new_seq = seq++) > MAX_SEQ)
+		return 0;
+	else
+		return new_seq;
 }

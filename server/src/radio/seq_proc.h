@@ -24,3 +24,9 @@ The authors can be reached by email at:
 bob@bobcowdery.plus.com
 
 */
+
+// Prototypes
+unsigned char* next_ep2_seq();
+unsigned char* next_ep4_seq();
+unsigned char* next_ep6_seq();
+void check_ep2_seq(unsigned char* ep2);

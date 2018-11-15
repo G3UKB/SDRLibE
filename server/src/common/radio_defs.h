@@ -38,6 +38,8 @@ bob@bobcowdery.plus.com
 #define START_FRAME_2 528
 #define END_FRAME_2 1032
 #define NUM_SMPLS 126
+#define DATA_PKT 0x01
+#define EP2 0x02
 #define M_PI 3.14159265358979323846
 // WBS FFT
 // Early firmware

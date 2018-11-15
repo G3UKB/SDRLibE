@@ -26,3 +26,6 @@ bob@bobcowdery.plus.com
 
 // Includes
 #include "../common/include.h"
+
+// Prototypes
+void encode_output_data(char *data_frame, char *packet_buffer);
