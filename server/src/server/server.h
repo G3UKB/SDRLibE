@@ -118,7 +118,9 @@ typedef struct AudioDefault {
 }AudioDefault;
 
 // Prototypes
-int DLL_EXPORT c_server_init(char* args);
+int DLL_EXPORT c_server_init();
+int DLL_EXPORT c_server_discover();
+int DLL_EXPORT c_server_configure(char* args);
 int DLL_EXPORT c_server_start();
 int DLL_EXPORT c_server_run_display(int display_run);
 int DLL_EXPORT c_server_terminate();

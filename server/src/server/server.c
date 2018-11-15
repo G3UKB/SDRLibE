@@ -35,13 +35,73 @@ Server processing called from the Cython layer to implement:
 // Includes
 #include "../common/include.h"
 
+// Module vars
+int sd = 0;							// One and only socket
+struct sockaddr_in *srv_addr;		// Server address structure
+int c_server_initialised = FALSE;	// Set when init completes successfully
+int c_server_on_line = FALSE;		// Set when discover completes successfully
+int c_server_configured = FALSE;	// Server configured
+int c_server_running = FALSE;		// Radio flag
+
 // ======================================================
 // Server operations
 
-int DLL_EXPORT c_server_init(char* args) {
+// Perform minimal initialisation
+// Must be first call
+int DLL_EXPORT c_server_init() {
 
 	/*
-	 * Initialise the C level server
+	* Initialise the server
+	*
+	* Arguments:
+	*
+	*/
+
+	// Initialise socket lib
+	WSADATA wsa;                    // Winsock
+	char last_error[128];           // Holder for last error
+	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+		strcpy(last_error, "Failed to initialise winsock!");
+		return -1;
+	}
+
+	// Create a broadcast socket
+	if ((sd = open_bc_socket()) == -1) {
+		strcpy(last_error, "Failed to create winsock!");
+		return -1;
+	}
+	c_server_initialised = TRUE;
+	return TRUE;
+}
+
+// Perform discovery protocol
+int DLL_EXPORT c_server_discover() {
+
+	/*
+	* Discover hardware
+	*
+	* Arguments:
+	*
+	*/
+
+	// Can't continue unless we are initialised
+	if (!c_server_initialised) {
+		send_message("c.server", "Must call c_server_initialise first!");
+		return FALSE;
+	}
+
+	if ((srv_addr = do_discover(sd)) == (struct sockaddr_in *)NULL) {
+		send_message("c.server", "No radio hardware found!");
+		return FALSE;
+	}
+	c_server_on_line = TRUE;
+}
+
+// Set up the server configuration
+int DLL_EXPORT c_server_configure(char* args) {
+
+	/*
+	 * Configure the server
 	 *
 	 * Arguments:
 	 * 	args	--	ptr to a json encoded string
@@ -67,6 +127,12 @@ int DLL_EXPORT c_server_init(char* args) {
 	cJSON *routes;
 	cJSON *hpsdr;
 	cJSON *local;
+
+	// Can't continue unless we are on-line
+	if (!c_server_on_line) {
+		send_message("c.server", "Radio hardware is off_line!");
+		return FALSE;
+	}
 
     // Parse the json string
     root = cJSON_Parse(args);
@@ -264,6 +330,8 @@ int DLL_EXPORT c_server_init(char* args) {
 
 	// Create the socket 
 	// Initialise socket lib
+	WSADATA wsa;                    // Winsock
+	char last_error[128];           // Holder for last error
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
 		strcpy(last_error, "Failed to initialise winsock!");
 		return -1;
@@ -287,25 +355,92 @@ int DLL_EXPORT c_server_init(char* args) {
 	}
 
 	// Init the UDP reader and writer
-	reader_init( sd, pargs->num_rx, pargs->general.iq_blk_sz, pargs->general.in_rate );
+	reader_init( sd, srv_addr, pargs->num_rx, pargs->general.iq_blk_sz, pargs->general.in_rate );
 	writer_init();
 
 	send_message("c.server", "Server initialised");
-
+	c_server_configured = TRUE;
 	return TRUE;
 }
 
 int DLL_EXPORT c_server_start() {
 	/*
-	 * Start the services
+	 * Start the radio services
 	 *
 	 * Arguments:
 	 *
 	 */
 
+	// Can't continue unless we are initialised
+	if (!c_server_configured) {
+		send_message("c.server", "Please configure server first!");
+		return FALSE;
+	}
+
+	// Start UDP services
 	reader_start();
 	writer_start();
+	// Start pipeline processing
 	pipeline_start();
+
+	return TRUE;
+}
+
+int DLL_EXPORT c_radio_start() {
+	/*
+	* Start the radio services
+	*
+	* Arguments:
+	*
+	*/
+
+	// Can't continue unless we are configured
+	if (!c_server_configured) {
+		send_message("c.server", "Please configure server first!");
+		return FALSE;
+	}
+
+	// Already running?
+	if (c_server_running) {
+		send_message("c.server", "Radio is already running!");
+		return FALSE;
+
+	}
+	// Start radio hardware
+	if (!do_start(sd, srv_addr)) {
+		send_message("c.server", "Failed to start radio hardware!");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+int DLL_EXPORT c_radio_stop() {
+	/*
+	* Stop the radio services
+	*
+	* Arguments:
+	*
+	*/
+
+	// Can't continue unless we are configured
+	if (!c_server_configured) {
+		send_message("c.server", "Please configure server first!");
+		return FALSE;
+	}
+
+	// Are we stopped?
+	if (!c_server_running) {
+		send_message("c.server", "Radio services already stopped!");
+		return FALSE;
+	}
+
+	// Stop radio hardware
+	if (!do_stop(sd, srv_addr)) {
+		send_message("c.server", "Failed to stop radio hardware!");
+		return FALSE;
+	}
+
 	return TRUE;
 }
 

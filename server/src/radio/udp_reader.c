@@ -39,7 +39,7 @@ pthread_t reader_thd;
 UDPReaderThreadData *udp_reader_td = NULL;
 
 // Initialise reader thread
-void reader_init(int sd, int num_rx, int num_smpls, int rate) {
+void reader_init(int sd, struct sockaddr_in *srv_addr, int num_rx, int num_smpls, int rate) {
 	/* Initialise reader
 	*
 	* Arguments:
@@ -57,6 +57,7 @@ void reader_init(int sd, int num_rx, int num_smpls, int rate) {
 	udp_reader_td->num_rx = num_rx;
 	udp_reader_td->num_smpls = num_smpls;
 	udp_reader_td->rate = rate;
+	udp_reader_td->srv_addr = srv_addr;
 	
 	// Create the reader thread
 	rc = pthread_create(&reader_thd, NULL, udp_reader_imp, (void *)udp_reader_td);
@@ -131,7 +132,7 @@ static void udprecvdata(UDPReaderThreadData* td) {
 	int num_sampls = td->num_smpls;
 	int rate = td->rate;
 	int sd = td->socket;
-	struct sockaddr_in *srv_addr;
+	struct sockaddr_in *srv_addr = td->srv_addr;
 	int addr_sz = sizeof(*srv_addr);
 
 	// Loop receiving stream from radio
