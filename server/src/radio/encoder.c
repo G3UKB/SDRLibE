@@ -57,31 +57,35 @@ void encode_output_data(char *data_frame, char *packet_buffer) {
 	packet_buffer[3] = EP2;
 	// Sequence number
 	char *seq = next_ep2_seq();
-	for( i=0; i<4; i++ ) {
-		packet_buffer[4+i] = seq[i];
+	for( i = FRAME_SEQ_1_OFFSET, j=0 ; i < FRAME_SEQ_1_OFFSET+4 ; i++,j++ ) {
+		packet_buffer[i] = seq[j];
 	}
 	// First USB frame
 	// Frame header
-	for( i = 8; i < 10; i++ ) {
+	for( i = FRAME_SYNC_1_OFFSET ; i < FRAME_SYNC_1_OFFSET+3 ; i++ ) {
 		packet_buffer[i] = 0x7f;
 	}
 	// CC bytes
 	cc = cc_out_next_seq();
-	//1-5
+	for (i = FRAME_CC_1_OFFSET, j=0 ; i < FRAME_CC_1_OFFSET + 5; i++,j++) {
+		packet_buffer[i] = cc[j];
+	}
 	// Frame data
-	for (i = 11, j = 0; i < 11+DATA_SZ; i++, j++) {
-		packet_buffer[i] = data_frame[i];
+	for (i = START_FRAME_1, j = 0; i < END_FRAME_1; i++, j++) {
+		packet_buffer[i] = data_frame[j];
 	}
 	// Second USB frame
 	// Frame header
-	for (i = 11+DATA_SZ ; i < 11 + 3 + DATA_SZ; i++) {
+	for (i = FRAME_SYNC_2_OFFSET ; i < FRAME_SYNC_2_OFFSET + 3 ; i++) {
 		packet_buffer[i] = 0x7f;
 	}
 	// CC bytes
 	cc = cc_out_next_seq();
-	// 1-5
+	for (i = FRAME_CC_2_OFFSET, j = 0 ; i < FRAME_CC_2_OFFSET + 5 ; i++, j++) {
+		packet_buffer[i] = cc[j];
+	}
 	// Frame data
-	for (i = 11 + 3 + DATA_SZ, j = 0; i < 11 + 3 + (2*DATA_SZ); i++, j++) {
+	for (i = START_FRAME_2, j = DATA_SZ/2 ; i < END_FRAME_2 ; i++, j++) {
 		packet_buffer[i] = data_frame[j];
 	}
 }

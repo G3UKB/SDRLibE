@@ -121,8 +121,9 @@ void *udp_writer_imp(void* data){
 				}
 			}
         } else {
-            Sleep(0.1);
+            Sleep(10.0);
         }
+		Sleep(1.0);
     }
     printf("UDP Writer thread exiting...\n");
     return NULL;

@@ -850,129 +850,7 @@ int DLL_EXPORT c_server_get_display_data(int display_id, void *display_data) {
 }
 
 // =========================================================================================================
-
-// ======================================================
-// Audio enumerations
-
-DLL_EXPORT char* c_server_enum_audio_inputs() {
-
-    /*
-    The enumeration structure is parsed into a Json structure
-    then converted to a string to pass back to 8th.
-
-    These are the definitions we receive :-
-        typedef struct DeviceEnum {
-            int direction;
-            int index;
-            char name[50];
-            int channels;
-            char host_api[50];
-        }DeviceEnum;
-
-        typedef struct DeviceEnumList {
-            int entries;
-            DeviceEnum devices[50];
-        }DeviceEnumList;
-
-    We need all the info in order to make the correct routing decisions.
-    */
-
-    int i;
-    //char * data;
-    cJSON *root;
-    cJSON *inputs;
-    cJSON *items;
-    DeviceEnumList* audio_inputs;
-
-    // Get the enumeration
-    audio_inputs = enum_inputs();
-    // Create the Json root object
-    root = cJSON_CreateObject();
-    // Add an array to hold the enumerations
-    cJSON_AddItemToObject(root, "inputs", inputs = cJSON_CreateArray());
-
-    // Iterate the list and populate the Json structure
-    for (i=0 ; i<audio_inputs->entries ; i++) {
-        // Create an object to add items to
-        items = cJSON_CreateObject();
-        cJSON_AddStringToObject(items, "name", audio_inputs->devices[i].name);
-        cJSON_AddStringToObject(items, "api", audio_inputs->devices[i].host_api);
-        cJSON_AddNumberToObject(items, "index", audio_inputs->devices[i].index);
-        cJSON_AddNumberToObject(items, "direction", audio_inputs->devices[i].direction);
-        cJSON_AddNumberToObject(items, "channels", audio_inputs->devices[i].channels);
-        cJSON_AddItemToArray(inputs, items);
-    }
-    return cJSON_Print(root);
-}
-
-DLL_EXPORT char* c_server_enum_audio_outputs() {
-
-    /*
-    The enumeration structure is parsed into a Json structure
-    then converted to a string to pass back to 8th.
-
-    These are the definitions we receive :-
-        typedef struct DeviceEnum {
-            int direction;
-            int index;
-            char name[50];
-            int channels;
-            char host_api[50];
-        }DeviceEnum;
-
-        typedef struct DeviceEnumList {
-            int entries;
-            DeviceEnum devices[50];
-        }DeviceEnumList;
-
-    We need all the info in order to make the correct routing decisions.
-    */
-
-    int i;
-    cJSON *root;
-    cJSON *outputs;
-    cJSON *items;
-    DeviceEnumList* audio_outputs;
-
-    // Get the enumeration
-    audio_outputs = enum_outputs();
-    // Create the Json root object
-    root = cJSON_CreateObject();
-    // Add an array to hold the enumerations
-    cJSON_AddItemToObject(root, "outputs", outputs = cJSON_CreateArray());
-
-    // Iterate the list and populate the Json structure
-    for (i=0 ; i<audio_outputs->entries ; i++) {
-        // Create an object to add items to
-        items = cJSON_CreateObject();
-        cJSON_AddStringToObject(items, "name", audio_outputs->devices[i].name);
-        cJSON_AddStringToObject(items, "api", audio_outputs->devices[i].host_api);
-        cJSON_AddNumberToObject(items, "index", audio_outputs->devices[i].index);
-        cJSON_AddNumberToObject(items, "direction", audio_outputs->devices[i].direction);
-        cJSON_AddNumberToObject(items, "channels", audio_outputs->devices[i].channels);
-        cJSON_AddItemToArray(outputs, items);
-    }
-    return cJSON_Print(root);
-}
-
-void DLL_EXPORT c_server_change_audio_outputs(int rx, char* audio_ch) {
-    // Reassign the audio routing
-    // The given receiver will be re-routed to the given device left/right/both channel
-    if (strcmp(audio_ch, LEFT) == 0) {
-        ppl->local_audio.local_output[0].dsp_ch_left = rx;
-    } else if(strcmp(audio_ch, RIGHT) == 0) {
-        ppl->local_audio.local_output[0].dsp_ch_right = rx;
-    } else {
-        ppl->local_audio.local_output[0].dsp_ch_left = rx;
-        ppl->local_audio.local_output[0].dsp_ch_right = rx;
-    }
-}
-
-void DLL_EXPORT c_server_revert_audio_outputs() {
-    // Revert the audio routing
-    ppl->local_audio.local_output[0].dsp_ch_left = audioDefault.rx_left;
-    ppl->local_audio.local_output[0].dsp_ch_right = audioDefault.rx_right;
-}
+// WBS Processing
 
 void hanning_window(int size) {
 
@@ -1115,4 +993,229 @@ int DLL_EXPORT c_server_get_wbs_data(int width, void *wbs_data) {
         //data[k++] = accumulator/factor;
     }
     return 1;
+}
+
+
+// =========================================================================================================
+// These functions can be called and may need to be called before server initialisation
+
+// ======================================================
+// Audio enumerations
+
+DLL_EXPORT char* c_server_enum_audio_inputs() {
+
+	/*
+	The enumeration structure is parsed into a Json structure
+	then converted to a string to pass back to 8th.
+
+	These are the definitions we receive :-
+	typedef struct DeviceEnum {
+	int direction;
+	int index;
+	char name[50];
+	int channels;
+	char host_api[50];
+	}DeviceEnum;
+
+	typedef struct DeviceEnumList {
+	int entries;
+	DeviceEnum devices[50];
+	}DeviceEnumList;
+
+	We need all the info in order to make the correct routing decisions.
+	*/
+
+	int i;
+	//char * data;
+	cJSON *root;
+	cJSON *inputs;
+	cJSON *items;
+	DeviceEnumList* audio_inputs;
+
+	// Get the enumeration
+	audio_inputs = enum_inputs();
+	// Create the Json root object
+	root = cJSON_CreateObject();
+	// Add an array to hold the enumerations
+	cJSON_AddItemToObject(root, "inputs", inputs = cJSON_CreateArray());
+
+	// Iterate the list and populate the Json structure
+	for (i = 0; i<audio_inputs->entries; i++) {
+		// Create an object to add items to
+		items = cJSON_CreateObject();
+		cJSON_AddStringToObject(items, "name", audio_inputs->devices[i].name);
+		cJSON_AddStringToObject(items, "api", audio_inputs->devices[i].host_api);
+		cJSON_AddNumberToObject(items, "index", audio_inputs->devices[i].index);
+		cJSON_AddNumberToObject(items, "direction", audio_inputs->devices[i].direction);
+		cJSON_AddNumberToObject(items, "channels", audio_inputs->devices[i].channels);
+		cJSON_AddItemToArray(inputs, items);
+	}
+	return cJSON_Print(root);
+}
+
+DLL_EXPORT char* c_server_enum_audio_outputs() {
+
+	/*
+	The enumeration structure is parsed into a Json structure
+	then converted to a string to pass back to 8th.
+
+	These are the definitions we receive :-
+	typedef struct DeviceEnum {
+	int direction;
+	int index;
+	char name[50];
+	int channels;
+	char host_api[50];
+	}DeviceEnum;
+
+	typedef struct DeviceEnumList {
+	int entries;
+	DeviceEnum devices[50];
+	}DeviceEnumList;
+
+	We need all the info in order to make the correct routing decisions.
+	*/
+
+	int i;
+	cJSON *root;
+	cJSON *outputs;
+	cJSON *items;
+	DeviceEnumList* audio_outputs;
+
+	// Get the enumeration
+	audio_outputs = enum_outputs();
+	// Create the Json root object
+	root = cJSON_CreateObject();
+	// Add an array to hold the enumerations
+	cJSON_AddItemToObject(root, "outputs", outputs = cJSON_CreateArray());
+
+	// Iterate the list and populate the Json structure
+	for (i = 0; i<audio_outputs->entries; i++) {
+		// Create an object to add items to
+		items = cJSON_CreateObject();
+		cJSON_AddStringToObject(items, "name", audio_outputs->devices[i].name);
+		cJSON_AddStringToObject(items, "api", audio_outputs->devices[i].host_api);
+		cJSON_AddNumberToObject(items, "index", audio_outputs->devices[i].index);
+		cJSON_AddNumberToObject(items, "direction", audio_outputs->devices[i].direction);
+		cJSON_AddNumberToObject(items, "channels", audio_outputs->devices[i].channels);
+		cJSON_AddItemToArray(outputs, items);
+	}
+	return cJSON_Print(root);
+}
+
+void DLL_EXPORT c_server_change_audio_outputs(int rx, char* audio_ch) {
+	// Reassign the audio routing
+	// The given receiver will be re-routed to the given device left/right/both channel
+	if (strcmp(audio_ch, LEFT) == 0) {
+		ppl->local_audio.local_output[0].dsp_ch_left = rx;
+	}
+	else if (strcmp(audio_ch, RIGHT) == 0) {
+		ppl->local_audio.local_output[0].dsp_ch_right = rx;
+	}
+	else {
+		ppl->local_audio.local_output[0].dsp_ch_left = rx;
+		ppl->local_audio.local_output[0].dsp_ch_right = rx;
+	}
+}
+
+void DLL_EXPORT c_server_revert_audio_outputs() {
+	// Revert the audio routing
+	ppl->local_audio.local_output[0].dsp_ch_left = audioDefault.rx_left;
+	ppl->local_audio.local_output[0].dsp_ch_right = audioDefault.rx_right;
+}
+
+// ======================================================
+// CC data updates
+void DLL_EXPORT c_server_cc_out_mox(int state) {
+	cc_out_mox(state);
+}
+void DLL_EXPORT c_server_cc_out_speed(int speed) {
+	cc_out_speed(speed);
+}
+void DLL_EXPORT c_server_cc_out_10_ref(int ref) {
+	cc_out_10_ref(ref);
+}
+void DLL_EXPORT c_server_cc_out_122_ref(int ref) {
+	cc_out_122_ref(ref);
+}
+void DLL_EXPORT c_server_cc_out_config(int config) {
+	cc_out_config(config);
+}
+void DLL_EXPORT c_server_cc_out_mic_src(int src) {
+	cc_out_mic_src(src);
+}
+void DLL_EXPORT c_server_cc_out_alex_attn(int attn) {
+	cc_out_alex_attn(attn);
+}
+void DLL_EXPORT c_server_cc_out_preamp(int preamp) {
+	cc_out_preamp(preamp);
+}
+void DLL_EXPORT c_server_cc_out_alex_rx_ant(int ant) {
+	cc_out_alex_rx_ant(ant);
+}
+void DLL_EXPORT c_server_cc_out_alex_rx_out(int out) {
+	cc_out_alex_rx_out(out);
+}
+void DLL_EXPORT c_server_cc_out_alex_tx_rly(int rly) {
+	cc_out_alex_tx_rly(rly);
+}
+void DLL_EXPORT c_server_cc_out_duplex(int duplex) {
+	cc_out_duplex(duplex);
+}
+void DLL_EXPORT c_server_cc_out_num_rx(int num) {
+	cc_out_num_rx(num);
+}
+void DLL_EXPORT c_server_cc_out_alex_auto(int state) {
+	cc_out_alex_auto(state);
+}
+void DLL_EXPORT c_server_cc_out_alex_hpf_bypass(int bypass) {
+	cc_out_alex_hpf_bypass(bypass);
+}
+void DLL_EXPORT c_server_cc_out_lpf_30_20(int setting) {
+	cc_out_lpf_30_20(setting);
+}
+void DLL_EXPORT c_server_cc_out_lpf_60_40(int setting) {
+	cc_out_lpf_60_40(setting);
+}
+void DLL_EXPORT c_server_cc_out_lpf_80(int setting) {
+	cc_out_lpf_80(setting);
+}
+void DLL_EXPORT c_server_cc_out_lpf_160(int setting) {
+	cc_out_lpf_160(setting);
+}
+void DLL_EXPORT c_server_cc_out_lpf_6(int setting) {
+	cc_out_lpf_6(setting);
+}
+void DLL_EXPORT c_server_cc_out_lpf_12_10(int setting) {
+	cc_out_lpf_12_10(setting);
+}
+void DLL_EXPORT c_server_cc_out_lpf_17_15(int setting) {
+	cc_out_lpf_17_15(setting);
+}
+void DLL_EXPORT c_server_cc_out_hpf_13(int setting) {
+	cc_out_hpf_13(setting);
+}
+void DLL_EXPORT c_server_cc_out_hpf_20(int setting) {
+	cc_out_hpf_20(setting);
+}
+void DLL_EXPORT c_server_cc_out_hpf_9_5(int setting) {
+	cc_out_hpf_9_5(setting);
+}
+void DLL_EXPORT c_server_cc_out_hpf_6_5(int setting) {
+	cc_out_hpf_6_5(setting);
+}
+void DLL_EXPORT c_server_cc_out_hpf_1_5(int setting) {
+	cc_out_hpf_1_5(setting);
+}
+void DLL_EXPORT c_server_cc_out_set_rx_1_freq(unsigned int freq_in_hz) {
+	cc_out_set_rx_1_freq(freq_in_hz);
+}
+void DLL_EXPORT c_server_cc_out_set_rx_2_freq(unsigned int freq_in_hz) {
+	cc_out_set_rx_2_freq(freq_in_hz);
+}
+void DLL_EXPORT c_server_cc_out_set_rx_3_freq(unsigned int freq_in_hz) {
+	cc_out_set_rx_3_freq(freq_in_hz);
+}
+void DLL_EXPORT c_server_cc_out_set_tx_freq(unsigned int freq_in_hz) {
+	cc_out_set_tx_freq(freq_in_hz);
 }
