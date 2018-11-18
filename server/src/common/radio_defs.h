@@ -68,6 +68,21 @@ bob@bobcowdery.plus.com
 #define DATA_PKT 0x01
 #define EP2 0x02
 
+// Samples per radio
+#define NUM_SMPLS_1_RADIO 126
+#define NUM_SMPLS_2_RADIO 72
+#define NUM_SMPLS_3_RADIO 50
+
+// DSP channel type
+#define CH_RX 0
+#define CH_TX 1
+
+// Channel run state and state switch transition
+#define CH_STATE_STOP 0
+#define CH_STATE_START 1
+#define CH_TRANSITION_WAIT 1
+#define CH_TRANSITION_NOWAIT 0
+
 //===============================================================
 // Global vars defined in radio_defs.c
 // Declare extern to satisfy linker

@@ -119,12 +119,11 @@ typedef struct AudioDefault {
 
 // Prototypes
 int DLL_EXPORT c_server_init();
-int DLL_EXPORT c_server_discover();
 int DLL_EXPORT c_server_configure(char* args);
 int DLL_EXPORT c_server_start();
+int DLL_EXPORT c_radio_discover();
 int DLL_EXPORT c_radio_start();
 int DLL_EXPORT c_radio_stop();
-int DLL_EXPORT c_server_run_display(int display_run);
 int DLL_EXPORT c_server_terminate();
 void DLL_EXPORT c_server_set_input_samplerate(int channel, int rate);
 void DLL_EXPORT c_server_set_ch_state(int channel, int state, int mode);
@@ -150,12 +149,11 @@ short DLL_EXPORT c_server_get_peak_input_level();
 void DLL_EXPORT c_server_set_mic_gain(float gain);
 void DLL_EXPORT c_server_set_rf_drive(float drive);
 int DLL_EXPORT c_server_get_display_data(int display_id, void *display_data);
+int DLL_EXPORT c_server_set_display(int ch_id, int display_width);
 DLL_EXPORT char* c_server_enum_audio_inputs();
 DLL_EXPORT char* c_server_enum_audio_outputs();
 void DLL_EXPORT c_server_change_audio_outputs(int rx, char* audio_ch);
 void DLL_EXPORT c_server_revert_audio_outputs();
-void hanning_window(int size);
-float get_pwr_wbs(int index);
 void DLL_EXPORT c_server_process_wbs_frame(char *ptr_in_bytes);
 int DLL_EXPORT c_server_get_wbs_data(int width, void *wbs_data);
 void DLL_EXPORT c_server_cc_out_mox(int state);
@@ -189,5 +187,8 @@ void DLL_EXPORT c_server_cc_out_set_rx_1_freq(unsigned int freq_in_hz);
 void DLL_EXPORT c_server_cc_out_set_rx_2_freq(unsigned int freq_in_hz);
 void DLL_EXPORT c_server_cc_out_set_rx_3_freq(unsigned int freq_in_hz);
 void DLL_EXPORT c_server_cc_out_set_tx_freq(unsigned int freq_in_hz);
+
+void hanning_window(int size);
+float get_pwr_wbs(int index);
 
 #endif

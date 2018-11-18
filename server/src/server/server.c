@@ -42,6 +42,7 @@ int c_server_initialised = FALSE;	// Set when init completes successfully
 int c_server_on_line = FALSE;		// Set when discover completes successfully
 int c_server_configured = FALSE;	// Server configured
 int c_server_running = FALSE;		// Radio flag
+int c_server_disp[3] = { FALSE,FALSE,FALSE };
 
 // ======================================================
 // Server operations
@@ -72,29 +73,6 @@ int DLL_EXPORT c_server_init() {
 	}
 	c_server_initialised = TRUE;
 	return TRUE;
-}
-
-// Perform discovery protocol
-int DLL_EXPORT c_server_discover() {
-
-	/*
-	* Discover hardware
-	*
-	* Arguments:
-	*
-	*/
-
-	// Can't continue unless we are initialised
-	if (!c_server_initialised) {
-		send_message("c.server", "Must call c_server_initialise first!");
-		return FALSE;
-	}
-
-	if ((srv_addr = do_discover(sd)) == (struct sockaddr_in *)NULL) {
-		send_message("c.server", "No radio hardware found!");
-		return FALSE;
-	}
-	c_server_on_line = TRUE;
 }
 
 // Set up the server configuration
@@ -343,19 +321,14 @@ int DLL_EXPORT c_server_configure(char* args) {
 	// RX channels
 	for (int ch = 0; i < pargs->num_rx; ch++) {
 		c_server_open_channel(CH_RX, pargs->rx[ch].ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
+		SetChannelState(pargs->rx[ch].ch_id, CH_STATE_START, CH_TRANSITION_WAIT);
 	}
 	// TX channel
 	c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
-	
-	// and display channels
-	// void c_server_open_display(int display, int fft_size, int win_type, int sub_spans, int in_sz, int display_width, int average_mode, int over_frames, int sample_rate, int frame_rate)
-	for (int ch = 0; i < pargs->num_rx; ch++) {
-		// Note we do not have all the parameters for this including the display width so more info will be needed in init and dynamically for resize etc.
-		c_server_open_display(pargs->disp[ch].ch_id, 2048, 0, 1, 1024, 500, 3, 10, 4800, 10);
-	}
+	SetChannelState(pargs->tx->ch_id, CH_STATE_START, CH_TRANSITION_WAIT);
 
 	// Init the UDP reader and writer
-	reader_init( sd, srv_addr, pargs->num_rx, pargs->general.iq_blk_sz, pargs->general.in_rate );
+	reader_init( sd, srv_addr, pargs->num_rx, pargs->general.in_rate );
 	writer_init(sd, srv_addr);
 
 	// Init sequence processing
@@ -383,9 +356,6 @@ int DLL_EXPORT c_server_start() {
 		return FALSE;
 	}
 
-	// Start UDP services
-	reader_start();
-	writer_start();
 	// Start pipeline processing
 	pipeline_start();
 
@@ -413,7 +383,13 @@ int DLL_EXPORT c_radio_start() {
 
 	}
 	// Start radio hardware
-	if (!do_start(sd, srv_addr)) {
+	if (do_start(sd, srv_addr)) {
+		// Before starting the reader we need to prime the radio
+		prime_radio( sd, srv_addr );
+		reader_start();
+		writer_start();
+		c_server_running = TRUE;
+	} else {
 		send_message("c.server", "Failed to start radio hardware!");
 		return FALSE;
 	}
@@ -441,25 +417,17 @@ int DLL_EXPORT c_radio_stop() {
 		return FALSE;
 	}
 
+	// Stop services
+	writer_stop();
+	reader_stop();
 	// Stop radio hardware
 	if (!do_stop(sd, srv_addr)) {
 		send_message("c.server", "Failed to stop radio hardware!");
 		return FALSE;
 	}
+	c_server_running = FALSE;
 
 	return TRUE;
-}
-
-int DLL_EXPORT c_server_run_display(int display_state) {
-	/*
-	 * Run/stop the pipeline display activity
-	 *
-	 * Arguments:
-	 * 	display_state	--	TRUE if display run
-	 *
-	 */
-
-	return pipeline_run_display(display_state);
 }
 
 int DLL_EXPORT c_server_terminate() {
@@ -469,6 +437,13 @@ int DLL_EXPORT c_server_terminate() {
 	 * Arguments:
 	 *
 	 */
+
+	// Close all channels
+	for (int i = 0; i < pargs->num_rx; i++) {
+		c_server_close_display(pargs->disp[i].ch_id);
+		c_server_close_channel(pargs->rx[i].ch_id);
+	}
+	c_server_close_channel(pargs->tx->ch_id);
 
 	// Stop and terminate the pipeline
 	reader_stop();
@@ -604,16 +579,6 @@ void DLL_EXPORT c_server_set_tslewdown(int channel, int slew) {
 	*/
 
 	SetChannelTSlewDown(channel, slew);
-}
-
-//======================================================
-// FFTW wisdom (tune FFTW)
-void DLL_EXPORT c_server_make_wisdom(char *dir) {
-	/*
-	** Make a wisdom file if it does not exist.
-	**
-	*/
-	WDSPwisdom(dir);
 }
 
 //======================================================
@@ -827,6 +792,26 @@ short DLL_EXPORT c_server_get_peak_input_level() {
 	return peak_input_level;
 }
 
+// =========================================================================================================
+// Display Processing
+
+// Set display
+int DLL_EXPORT c_server_set_display(int ch_id, int display_width) {
+	if (!c_server_disp[ch_id]) {
+		c_server_open_display(ch_id, 2048, 0, 1, 1024, display_width, 3, 10, 4800, 10);
+		c_server_disp[ch_id] = TRUE;
+	} else {
+		c_impl_server_set_display(ch_id, 2048, 0, 1, 1024, display_width, 3, 10, 4800, 10);
+	}
+	// Are we there yet?
+	int count = 0;
+	for (int i = 0; i < 2; i++) {
+		if (c_server_disp[i]) count++;
+	}
+	if (count == pargs->num_rx) pipeline_run_display(TRUE);
+}
+
+// Get display data
 int DLL_EXPORT c_server_get_display_data(int display_id, void *display_data) {
 	/*
 	** Get display data if there is any available.
@@ -1000,6 +985,32 @@ int DLL_EXPORT c_server_get_wbs_data(int width, void *wbs_data) {
 // These functions can be called and may need to be called before server initialisation
 
 // ======================================================
+// Radio Functions
+
+// Perform discovery protocol
+int DLL_EXPORT c_radio_discover() {
+
+	/*
+	* Discover hardware
+	*
+	* Arguments:
+	*
+	*/
+
+	// Can't continue unless we are initialised
+	if (!c_server_initialised) {
+		send_message("c.server", "Must call c_server_initialise first!");
+		return FALSE;
+	}
+
+	if ((srv_addr = do_discover(sd)) == (struct sockaddr_in *)NULL) {
+		send_message("c.server", "No radio hardware found!");
+		return FALSE;
+	}
+	c_server_on_line = TRUE;
+}
+
+// ======================================================
 // Audio enumerations
 
 DLL_EXPORT char* c_server_enum_audio_inputs() {
@@ -1122,6 +1133,16 @@ void DLL_EXPORT c_server_revert_audio_outputs() {
 	// Revert the audio routing
 	ppl->local_audio.local_output[0].dsp_ch_left = audioDefault.rx_left;
 	ppl->local_audio.local_output[0].dsp_ch_right = audioDefault.rx_right;
+}
+
+//======================================================
+// FFTW wisdom (tune FFTW)
+void DLL_EXPORT c_server_make_wisdom(char *dir) {
+	/*
+	** Make a wisdom file if it does not exist.
+	**
+	*/
+	WDSPwisdom(dir);
 }
 
 // ======================================================

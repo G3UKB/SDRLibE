@@ -39,7 +39,7 @@ pthread_t reader_thd;
 UDPReaderThreadData *udp_reader_td = NULL;
 
 // Initialise reader thread
-void reader_init(int sd, struct sockaddr_in *srv_addr, int num_rx, int num_smpls, int rate) {
+void reader_init(int sd, struct sockaddr_in *srv_addr, int num_rx, int rate) {
 	/* Initialise reader
 	*
 	* Arguments:
@@ -55,7 +55,6 @@ void reader_init(int sd, struct sockaddr_in *srv_addr, int num_rx, int num_smpls
 	udp_reader_td->terminate = FALSE;
 	udp_reader_td->socket= sd;
 	udp_reader_td->num_rx = num_rx;
-	udp_reader_td->num_smpls = num_smpls;
 	udp_reader_td->rate = rate;
 	udp_reader_td->srv_addr = srv_addr;
 	
@@ -73,7 +72,7 @@ void reader_start() {
 	udp_reader_td->run = TRUE;
 }
 
-// Start reader thread
+// Stop reader thread
 void reader_stop() {
 	udp_reader_td->run = FALSE;
 }
@@ -129,11 +128,11 @@ static void udprecvdata(UDPReaderThreadData* td) {
     unsigned char acc[DATA_SZ*2];
 
 	int num_rx = td->num_rx;
-	int num_sampls = td->num_smpls;
 	int rate = td->rate;
 	int sd = td->socket;
 	struct sockaddr_in *srv_addr = td->srv_addr;
 	int addr_sz = sizeof(*srv_addr);
+	char seq[4];
 
 	// Loop receiving stream from radio
 	while (td->run && !td->terminate) {
@@ -142,17 +141,37 @@ static void udprecvdata(UDPReaderThreadData* td) {
 		if (n == FRAME_SZ) {
 			// We have a frame
 			// First 8 bytes are the header, then 2x512 bytes of data
-			// Then the sync and cc bytes are the start of each data frame
-			// 
-			for (i = START_FRAME_1, j = 0; i < END_FRAME_1; i++, j++) {
+			// The sync and cc bytes are the start of each data frame
+			//
+			// Extract and chack the sequence number
+			//  2    1   1   4
+			// Sync Cmd End Seq
+			check_ep2_seq(frame + 4);
+			// Extract data
+			// For 1,2 radios the entire dataframe is used
+			// For 3 radios there are 4 padding bytes in each frame
+			int end_frame_1 = END_FRAME_1;
+			int end_frame_2 = END_FRAME_2;
+			int data_sz = DATA_SZ;
+			int num_smpls = NUM_SMPLS_1_RADIO;
+			if (num_rx == 2) {
+				num_smpls = NUM_SMPLS_2_RADIO;
+			}
+			else if (num_rx == 3) {
+				end_frame_1 -= 4;
+				end_frame_2 -= 4;
+				data_sz -= 8;
+				num_smpls = NUM_SMPLS_3_RADIO;
+			}
+			for (i = START_FRAME_1, j = 0; i < end_frame_1; i++, j++) {
 				frame_data[j] = frame[i];
 			}
-			for (i = START_FRAME_2, j = DATA_SZ; i < END_FRAME_2; i++, j++) {
+			for (i = START_FRAME_2, j = DATA_SZ; i < end_frame_2; i++, j++) {
 				frame_data[j] = frame[i];
 			}
 			// Decode the frame and dispatch for processing
 			// void frame_decode(int n_smpls, int n_rx, int rate, int in_sz, char *ptr_in_bytes) 
-			frame_decode(num_rx, num_sampls, rate, DATA_SZ, frame_data);
+			frame_decode(num_rx, num_smpls, rate, data_sz, frame_data);
 		}
 	}
 }

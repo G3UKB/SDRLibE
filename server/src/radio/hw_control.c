@@ -62,7 +62,7 @@ struct sockaddr_in *do_discover(int sd) {
 	return udprecvcontrol(sd);
 }
 
-// Start streaming
+// Start radio hardware
 int do_start(int sd, struct sockaddr_in *svrAddr) {
 	// Send start message
 	// Clear message buffer

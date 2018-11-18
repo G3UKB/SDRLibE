@@ -59,7 +59,24 @@ void writer_init(int sd, struct sockaddr_in *srv_addr) {
 		return FALSE;
 	}
 
+	// Clear data arrays
+	memset(frame, 0, sizeof(frame));
+	memset(frame_data, 0, sizeof(frame_data));
+
 	return TRUE;
+}
+
+// Prime radio
+void prime_radio(int sd, struct sockaddr_in *srv_addr) {
+	// Send a few data frames with cc data to initialise the radio
+	for (int i = 0; i < 4; i++) {
+		// Encode into a frame
+		encode_output_data(frame_data, frame);
+		// Dispatch to radio
+		if (sendto(sd, (const char*)frame, FRAME_SZ, 0, (struct sockaddr*) srv_addr, sizeof(*srv_addr)) == -1) {
+			printf("UDP prime failed!\n");
+		}
+	}
 }
 
 // Start writer thread
@@ -107,7 +124,7 @@ void *udp_writer_imp(void* data){
 
     printf("Started UDP writer thread\n");
 
-    while (td->terminate == FALSE) {
+    while (!td->terminate) {
         if (td->run) {
 			// See if enough data available in the ring buffer
 			if (ringb_read_space(rb_out) >= DATA_SZ*2) {
