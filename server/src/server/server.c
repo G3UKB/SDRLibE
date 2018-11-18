@@ -325,7 +325,6 @@ int DLL_EXPORT c_server_configure(char* args) {
 	}
 	// TX channel
 	c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
-	SetChannelState(pargs->tx->ch_id, CH_STATE_START, CH_TRANSITION_WAIT);
 
 	// Init the UDP reader and writer
 	reader_init( sd, srv_addr, pargs->num_rx, pargs->general.in_rate );
@@ -482,6 +481,39 @@ int DLL_EXPORT c_server_terminate() {
 	ringb_free(rb_out);
 
 	return TRUE;
+}
+
+void DLL_EXPORT c_server_mox(int mox_state) {
+	/*
+	** Set TX/RX state
+	**
+	** Arguments:
+	** 	mox_state	-- TRUE if MOX on
+	**
+	*/
+
+	if (mox_state) {
+		// Switch to TX
+		// We run down active receivers except RX-1 which is the monitor
+		for (int i = 1; i < pargs->num_rx; i++) {
+			SetChannelState(pargs->rx[1].ch_id, CH_STATE_STOP, CH_TRANSITION_NOWAIT);
+		}
+		// Run up TX
+		SetChannelState(pargs->tx->ch_id, CH_STATE_START, CH_TRANSITION_NOWAIT);
+		// Set hardware to TX
+		cc_out_mox(TRUE);
+	}
+	else {
+		// Switch to RX
+		// Run down TX
+		SetChannelState(pargs->tx->ch_id, CH_STATE_STOP, CH_TRANSITION_NOWAIT);
+		// We run up active receivers except RX-1 which is the monitor
+		for (int i = 1; i < pargs->num_rx; i++) {
+			SetChannelState(pargs->rx[1].ch_id, CH_STATE_START, CH_TRANSITION_NOWAIT);
+		}
+		// Set hardware to RX
+		cc_out_mox(FALSE);
+	}
 }
 
 void DLL_EXPORT c_server_set_input_samplerate(int channel, int rate) {

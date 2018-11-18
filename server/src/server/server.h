@@ -125,6 +125,7 @@ int DLL_EXPORT c_radio_discover();
 int DLL_EXPORT c_radio_start(int wbs);
 int DLL_EXPORT c_radio_stop();
 int DLL_EXPORT c_server_terminate();
+void DLL_EXPORT c_server_mox(int state);
 void DLL_EXPORT c_server_set_input_samplerate(int channel, int rate);
 void DLL_EXPORT c_server_set_dsp_sz(int channel, int sz);
 void DLL_EXPORT c_server_set_tdelayup(int channel, int delay);
