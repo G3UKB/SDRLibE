@@ -362,12 +362,12 @@ int DLL_EXPORT c_server_start() {
 	return TRUE;
 }
 
-int DLL_EXPORT c_radio_start() {
+int DLL_EXPORT c_radio_start(int wbs) {
 	/*
 	* Start the radio services
 	*
 	* Arguments:
-	*
+	*	wbs	-- TRUE to start the wide band scope
 	*/
 
 	// Can't continue unless we are configured
@@ -383,7 +383,7 @@ int DLL_EXPORT c_radio_start() {
 
 	}
 	// Start radio hardware
-	if (do_start(sd, srv_addr)) {
+	if (do_start(sd, srv_addr, wbs)) {
 		// Before starting the reader we need to prime the radio
 		prime_radio( sd, srv_addr );
 		reader_start();
@@ -497,23 +497,12 @@ void DLL_EXPORT c_server_set_input_samplerate(int channel, int rate) {
 	if (input_samplerate != rate) {
 		input_samplerate = rate;
 		if (channel != -1) {
+			// Tell DSP
 			SetInputSamplerate(channel, rate);
+			// Tell radio
+			cc_out_speed(rate);
 		}
 	}
-}
-
-void DLL_EXPORT c_server_set_ch_state(int channel, int state, int mode) {
-	/*
-	** Change the channel state
-	**
-	** Arguments:
-	** 	channel 	-- the channel id as returned by open_channel()
-	** 	state		-- CH_STATE_STOP | CH_STATE_START
-	** 	mode		-- CH_TRANSITION_WAIT | CH_TRANSITION_NOWAIT
-	**
-	*/
-
-	SetChannelState(channel, state, mode);
 }
 
 void DLL_EXPORT c_server_set_dsp_sz(int channel, int sz) {

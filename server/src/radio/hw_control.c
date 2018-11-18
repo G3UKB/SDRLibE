@@ -63,14 +63,19 @@ struct sockaddr_in *do_discover(int sd) {
 }
 
 // Start radio hardware
-int do_start(int sd, struct sockaddr_in *svrAddr) {
+int do_start(int sd, struct sockaddr_in *svrAddr, int wbs) {
 	// Send start message
 	// Clear message buffer
 	memset(msg, 0x0, MAX_MSG);
 	msg[0] = 0xEF;
 	msg[1] = 0xFE;
 	msg[2] = 0x04;
-	msg[3] = 0x01;
+	if (wbs) {
+		// Set wide band scope on
+		msg[3] = 0x03;
+	} else {
+		msg[3] = 0x01;
+	}
 
 	// Dispatch
 	if (sendto(sd, (const char*)msg, MAX_MSG, 0, (const struct sockaddr*) svrAddr, sizeof(*svrAddr)) == -1) {
