@@ -31,6 +31,9 @@ bob@bobcowdery.plus.com
 int open_bc_socket() {
 	int sd;
 	int broadcast = 1;
+	struct timeval tv;
+	tv.tv_sec = 4;
+	tv.tv_usec = 0;
 
 	// Create socket
 	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -41,6 +44,12 @@ int open_bc_socket() {
 	// Set to broadcast
 	if (setsockopt(sd, SOL_SOCKET, SO_BROADCAST, (const char*)&broadcast, sizeof broadcast) == -1) {
 		return -1;
+	}
+
+	// Set receive timeout
+	if (setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, (const const char*)&tv, sizeof tv) == -1) {
+		printf("Failed to set option SO_RCVTIMEO!\n");
+		return FALSE;
 	}
 
 	return sd;

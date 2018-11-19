@@ -1010,20 +1010,17 @@ int DLL_EXPORT c_server_get_wbs_data(int width, void *wbs_data) {
 
 // Perform discovery protocol
 int DLL_EXPORT c_radio_discover() {
-
 	/*
 	* Discover hardware
 	*
 	* Arguments:
 	*
 	*/
-
 	// Can't continue unless we are initialised
 	if (!c_server_initialised) {
 		send_message("c.server", "Must call c_server_initialise first!");
 		return FALSE;
 	}
-
 	if ((srv_addr = do_discover(sd)) == (struct sockaddr_in *)NULL) {
 		send_message("c.server", "No radio hardware found!");
 		return FALSE;

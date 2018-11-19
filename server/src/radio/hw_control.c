@@ -39,7 +39,6 @@ static struct sockaddr_in * udprecvcontrol(int sd);
 
 // Discover protocol
 struct sockaddr_in *do_discover(int sd) {
-
 	// Send discovery message
 	// Clear message buffer
 	memset(msg, 0x0, MAX_MSG);
