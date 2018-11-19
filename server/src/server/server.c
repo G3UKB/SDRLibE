@@ -106,12 +106,6 @@ int DLL_EXPORT c_server_configure(char* args) {
 	cJSON *hpsdr;
 	cJSON *local;
 
-	// Can't continue unless we are on-line
-	if (!c_server_on_line) {
-		send_message("c.server", "Radio hardware is off_line!");
-		return FALSE;
-	}
-
     // Parse the json string
     root = cJSON_Parse(args);
 
@@ -319,7 +313,7 @@ int DLL_EXPORT c_server_configure(char* args) {
 	// Now open the DSP channels
 	// void c_server_open_channel(int ch_type, int channel, int iq_size, int mic_size, int in_rate, int out_rate, int tdelayup, int tslewup, int tdelaydown, int tslewdown)
 	// RX channels
-	for (int ch = 0; i < pargs->num_rx; ch++) {
+	for (int ch = 0; ch < pargs->num_rx; ch++) {
 		c_server_open_channel(CH_RX, pargs->rx[ch].ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
 		SetChannelState(pargs->rx[ch].ch_id, CH_STATE_START, CH_TRANSITION_WAIT);
 	}
@@ -699,7 +693,6 @@ void DLL_EXPORT c_server_set_rx_gain(int rx, float gain) {
 	** 	gain  -- the gain value 0.0 - 1.0
 	**
 	*/
-
 	ppl->gain[rx] = gain;
 }
 
@@ -829,7 +822,9 @@ int DLL_EXPORT c_server_set_display(int ch_id, int display_width) {
 	for (int i = 0; i < 2; i++) {
 		if (c_server_disp[i]) count++;
 	}
-	if (count == pargs->num_rx) pipeline_run_display(TRUE);
+	if (count == pargs->num_rx) {
+		pipeline_run_display(TRUE);
+	}
 }
 
 // Get display data

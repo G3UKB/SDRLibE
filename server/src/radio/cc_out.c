@@ -237,7 +237,7 @@ unsigned char cc_out_array[7][5] =
 
 // Get the next CC sequence(round robin)
 unsigned char* cc_out_next_seq() {
-	pthread_mutex_lock(cc_out_mutex);
+	pthread_mutex_lock(&cc_out_mutex);
 	unsigned char* cc_array;
 	// Bump the cc_id
 	if (cc_id++ > MAX_CC) cc_id = 0;
@@ -250,7 +250,7 @@ unsigned char* cc_out_next_seq() {
 	else
 		// Need to reset the MOX bit
 		cc_array[0] = cc_array[0] & 0xfe;
-	pthread_mutex_unlock(cc_out_mutex);
+	pthread_mutex_unlock(&cc_out_mutex);
 	return cc_array;
 }
 
@@ -261,34 +261,32 @@ unsigned char* cc_out_next_seq() {
 // Helpers
 // Get the given byte in the given buffer
 unsigned char cc_out_get_byte (int cc_id, int cc_byte) {
-	pthread_mutex_lock(cc_out_mutex);
+	pthread_mutex_lock(&cc_out_mutex);
 	unsigned char b = cc_out_array[cc_id][cc_byte];
-	pthread_mutex_unlock(cc_out_mutex);
+	pthread_mutex_unlock(&cc_out_mutex);
 	return b;
 }
 
 // Overwrite the given byte in the given buffer
 void cc_out_put_byte(int cc_id, int cc_byte, unsigned char b) {
-	pthread_mutex_lock(cc_out_mutex);
+	pthread_mutex_lock(&cc_out_mutex);
 	cc_out_array[cc_id][cc_byte] = b;
-	pthread_mutex_unlock(cc_out_mutex);
+	pthread_mutex_unlock(&cc_out_mutex);
 }
 
 // Given a byte and a target bit field setting return the modified byte
 unsigned char cc_out_set_bits(int target, unsigned char *bits_array, unsigned char bit_field, unsigned char bit_mask) {
-	pthread_mutex_lock(cc_out_mutex);
+	pthread_mutex_lock(&cc_out_mutex);
 	unsigned char b = (bit_field & bit_mask) | bits_array[target];
-	pthread_mutex_unlock(cc_out_mutex);
+	pthread_mutex_unlock(&cc_out_mutex);
 	return b;
 }
 
 // Update the setting
 void update_setting(cc_array_idx, cc_byte_idx, value, bit_array, bit_msk) {
-	pthread_mutex_lock(cc_out_mutex);
 	unsigned char b = cc_out_get_byte(cc_array_idx, cc_byte_idx);
 	unsigned char new_b = cc_out_set_bits(value, bit_array, b, bit_msk);
 	cc_out_put_byte(cc_array_idx, cc_byte_idx, new_b);
-	pthread_mutex_unlock(cc_out_mutex);
 }
 
 // ========================================
