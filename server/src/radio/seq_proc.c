@@ -42,27 +42,27 @@ static unsigned int next_seq(unsigned int seq);
 
 // Set MAX_SEQ to unsigned int (32 bit) max value
 void seq_init() {
-	MAX_SEQ = (unsigned int)pow(2, 32);
+	MAX_SEQ = (unsigned int)pow((double)2.0, (double)32.0)-1;
 }
 
 // Calculate and return next seq as a BE byte array
 unsigned char* next_ep2_seq() {
 	// Bump seq
-	EP2_SEQ = next_seq(big_to_little_endian(EP2_SEQ));
+	EP2_SEQ = next_seq(EP2_SEQ);
 	// Return this as a byte array in BE format
 	return little_to_big_endian(EP2_SEQ);
 }
 
 unsigned char*  next_ep4_seq() {
 	// Bump seq
-	EP4_SEQ = next_seq(big_to_little_endian(EP4_SEQ));
+	EP4_SEQ = next_seq(EP4_SEQ);
 	// Return this as a byte array in BE format
 	return little_to_big_endian(EP4_SEQ);
 }
 
 unsigned char*  next_ep6_seq() {
 	// Bump seq
-	EP6_SEQ = next_seq(big_to_little_endian(EP6_SEQ));
+	EP6_SEQ = next_seq(EP6_SEQ);
 	// Return this as a byte array in BE format
 	return little_to_big_endian(EP6_SEQ);
 }
@@ -109,9 +109,10 @@ static unsigned char* little_to_big_endian(unsigned int little_endian) {
 // Next sequence number cyclic
 static unsigned int next_seq(unsigned int seq) {
 	// This is a little endian seq number
-	unsigned int new_seq;
-	if ((new_seq = seq++) > MAX_SEQ)
+	seq = seq++;
+	if (seq > MAX_SEQ) {
 		return 0;
-	else
-		return new_seq;
+	} else {
+		return seq;
+	}
 }

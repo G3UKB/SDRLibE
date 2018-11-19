@@ -49,7 +49,6 @@ void encode_output_data(char *data_frame, char *packet_buffer) {
 	int i,j;
 	char *cc;
 
-	// ToDo - defines for all constants
 	// Header
 	packet_buffer[0] = 0xef;
 	packet_buffer[1] = 0xfe;
