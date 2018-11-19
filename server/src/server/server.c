@@ -362,7 +362,6 @@ int DLL_EXPORT c_radio_start(int wbs) {
 	* Arguments:
 	*	wbs	-- TRUE to start the wide band scope
 	*/
-
 	// Can't continue unless we are configured
 	if (!c_server_configured) {
 		send_message("c.server", "Please configure server first!");
@@ -386,7 +385,6 @@ int DLL_EXPORT c_radio_start(int wbs) {
 		send_message("c.server", "Failed to start radio hardware!");
 		return FALSE;
 	}
-
 	return TRUE;
 }
 
@@ -1021,6 +1019,7 @@ int DLL_EXPORT c_radio_discover() {
 		return FALSE;
 	}
 	c_server_on_line = TRUE;
+	return TRUE;
 }
 
 // ======================================================

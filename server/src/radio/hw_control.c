@@ -109,7 +109,9 @@ static struct sockaddr_in *udprecvcontrol(int sd) {
 	// Clear message buffer
 	memset(msg, 0x0, MAX_MSG);
 	// receive message
+	printf("Waiting\n");
 	n = recvfrom(sd, (char*)msg, MAX_MSG, 0, (struct sockaddr *) &svrAddr, &svrLen);
+	printf("Got %d\n", n);
 	if (n<0)
 		return (struct sockaddr_in *)NULL;
 	return &svrAddr;
