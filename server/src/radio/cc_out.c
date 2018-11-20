@@ -217,11 +217,11 @@ unsigned char cco_alex_hpf_1_5_m = 0xef;
 // ============================================================================== =
 // State vars
 // Track the cc_out id
-int cc_id = -1;
+int cc_id = 0;
 int cc_mox_state = FALSE;
 
 // The 5 byte CC arrays
-unsigned char cc_out_array[7][5] =
+unsigned char cc_out_array[7][5] = 
 {
 	{ 0x00, 0x00, 0x00, 0x00, 0x00 },
 	{ 0x02, 0x00, 0x00, 0x00, 0x00 },
@@ -231,6 +231,7 @@ unsigned char cc_out_array[7][5] =
 	{ 0x12, 0x00, 0x00, 0x00, 0x00 },
 	{ 0x14, 0x00, 0x00, 0x00, 0x00 },
 };
+unsigned char* cc_array;
 
 // ========================================
 // Get
@@ -238,18 +239,23 @@ unsigned char cc_out_array[7][5] =
 // Get the next CC sequence(round robin)
 unsigned char* cc_out_next_seq() {
 	pthread_mutex_lock(&cc_out_mutex);
-	unsigned char* cc_array;
-	// Bump the cc_id
-	if (cc_id++ > MAX_CC) cc_id = 0;
 	// Get the array
 	cc_array = cc_out_array[cc_id];
+	
 	// Manage the MOX bit
-	if (cc_mox_state)
+	if (cc_mox_state) {
 		// Need to set the MOX bit
 		cc_array[0] = cc_array[0] | 0x01;
-	else
+	}
+	else {
 		// Need to reset the MOX bit
 		cc_array[0] = cc_array[0] & 0xfe;
+	}
+
+	// Bump the cc_id
+	cc_id++;
+	if (cc_id > MAX_CC) cc_id = 0;
+
 	pthread_mutex_unlock(&cc_out_mutex);
 	return cc_array;
 }

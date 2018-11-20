@@ -55,17 +55,17 @@ PaErrorCode audio_init() {
 	int i;
 	int r = TRUE;
 	if (!initialised) {
-	for (i=0 ; i < MAX_RX + MAX_TX ; i++) {
-		user_data[i] = (UserData *)NULL;
-		audio_desc[i] = (AudioDescriptor*)NULL;
-	}
+		for (i=0 ; i < MAX_RX + MAX_TX ; i++) {
+			user_data[i] = (UserData *)NULL;
+			audio_desc[i] = (AudioDescriptor*)NULL;
+		}
 
-	// Create enum data structure
-	device_enum_list = (DeviceEnumList *)safealloc(sizeof(DeviceEnumList), sizeof(char), "DEVICE_ENUM_STRUCT");
+		// Create enum data structure
+		device_enum_list = (DeviceEnumList *)safealloc(sizeof(DeviceEnumList), sizeof(char), "DEVICE_ENUM_STRUCT");
 
-	r = Pa_Initialize();
-	initialised = TRUE;
-	}
+		r = Pa_Initialize();
+		initialised = TRUE;
+		}
 	return r;
 }
 
@@ -398,6 +398,7 @@ static int pa_stream_callback( 	const void *inputBuffer, void *outputBuffer,
 		}
 	}else if (pud->direction == DIR_OUT) {
 		// Stereo stream
+		//printf("Audio: %d\n", framesPerBuffer * 4);
 		if (ringb_read_space (pud->rb) >= framesPerBuffer*4) {
 			ringb_read (pud->rb, (char *)outputBuffer, framesPerBuffer*4);
 		} else {

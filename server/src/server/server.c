@@ -37,7 +37,7 @@ Server processing called from the Cython layer to implement:
 
 // Module vars
 int sd = 0;							// One and only socket
-struct sockaddr_in *srv_addr;		// Server address structure
+struct sockaddr_in srv_addr;		// Server address structure
 int c_server_initialised = FALSE;	// Set when init completes successfully
 int c_server_on_line = FALSE;		// Set when discover completes successfully
 int c_server_configured = FALSE;	// Server configured
@@ -217,6 +217,8 @@ int DLL_EXPORT c_server_configure(char* args) {
 	// in the pipeline processing is to know which DSP channel reads or writes data to which audio ring buffer.
 	// The audio processor callback gets kicked for each active stream when data input or output is required.
 	// Allocate the required number of audio processors.
+	// Init local audio
+	audio_init();
 	if (strcmp(ppl->args->audio.in_src, LOCAL) == 0) {
 		// We have local input defined
 		padesc = open_audio_channel(DIR_IN, ppl->args->audio.in_hostapi, ppl->args->audio.in_dev);
@@ -320,16 +322,6 @@ int DLL_EXPORT c_server_configure(char* args) {
 	// TX channel
 	c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
 
-	// Init the UDP reader and writer
-	reader_init( sd, srv_addr, pargs->num_rx, pargs->general.in_rate );
-	writer_init(sd, srv_addr);
-
-	// Init sequence processing
-	seq_init();
-
-	// Init the CC bytes with defaults
-	cc_out_init();
-
 	send_message("c.server", "Server initialised");
 	c_server_configured = TRUE;
 	return TRUE;
@@ -351,6 +343,20 @@ int DLL_EXPORT c_server_start() {
 
 	// Start pipeline processing
 	pipeline_start();
+
+	// Revert to a normal socket with larger buffers
+	revert_sd(sd);
+	// Init the UDP reader and writer
+	reader_init(sd, &srv_addr, pargs->num_rx, pargs->general.in_rate);
+	writer_init(sd, &srv_addr);
+
+	// Init sequence processing
+	seq_init();
+
+	// Init the CC bytes with defaults
+	cc_out_init();
+
+	send_message("c.server", "Server running");
 
 	return TRUE;
 }
@@ -375,9 +381,9 @@ int DLL_EXPORT c_radio_start(int wbs) {
 
 	}
 	// Start radio hardware
-	if (do_start(sd, srv_addr, wbs)) {
+	if (do_start(sd, &srv_addr, wbs)) {
 		// Before starting the reader we need to prime the radio
-		prime_radio( sd, srv_addr );
+		prime_radio( sd, &srv_addr );
 		reader_start();
 		writer_start();
 		c_server_running = TRUE;
@@ -412,7 +418,7 @@ int DLL_EXPORT c_radio_stop() {
 	writer_stop();
 	reader_stop();
 	// Stop radio hardware
-	if (!do_stop(sd, srv_addr)) {
+	if (!do_stop(sd, &srv_addr)) {
 		send_message("c.server", "Failed to stop radio hardware!");
 		return FALSE;
 	}
@@ -1014,11 +1020,14 @@ int DLL_EXPORT c_radio_discover() {
 		send_message("c.server", "Must call c_server_initialise first!");
 		return FALSE;
 	}
-	if ((srv_addr = do_discover(sd)) == (struct sockaddr_in *)NULL) {
+	if (!do_discover(&srv_addr, sd)) {
 		send_message("c.server", "No radio hardware found!");
 		return FALSE;
 	}
+	//printf("\nPort:%d\n", ntohs(srv_addr.sin_port));
+	//printf("\nIP:%s\n", inet_ntoa(srv_addr.sin_addr));
 	c_server_on_line = TRUE;
+	send_message("c.server", "Radio hardware on-line");
 	return TRUE;
 }
 

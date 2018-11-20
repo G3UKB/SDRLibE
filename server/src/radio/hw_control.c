@@ -35,10 +35,10 @@ unsigned char msg[MAX_MSG];
 unsigned char resp[MAX_RESP];
 
 // Forward refs
-static struct sockaddr_in * udprecvcontrol(int sd);
+static int udprecvcontrol(struct sockaddr *svr_addr, int sd);
 
 // Discover protocol
-struct sockaddr_in *do_discover(int sd) {
+int do_discover(struct sockaddr_in *srv_addr, int sd) {
 	// Send discovery message
 	// Clear message buffer
 	memset(msg, 0x0, MAX_MSG);
@@ -58,7 +58,7 @@ struct sockaddr_in *do_discover(int sd) {
 	}
 
 	// Waiting for discovery response
-	return udprecvcontrol(sd);
+	return udprecvcontrol(srv_addr, sd);
 }
 
 // Start radio hardware
@@ -77,7 +77,8 @@ int do_start(int sd, struct sockaddr_in *svrAddr, int wbs) {
 	}
 
 	// Dispatch
-	if (sendto(sd, (const char*)msg, MAX_MSG, 0, (const struct sockaddr*) svrAddr, sizeof(*svrAddr)) == -1) {
+	if (sendto(sd, (const char*)msg, MAX_MSG, 0, (const struct sockaddr*) svrAddr, sizeof(struct sockaddr)) == -1) {
+		printf("Start failed\n");
 		return FALSE;
 	}
 
@@ -102,17 +103,25 @@ int do_stop(int sd, struct sockaddr_in *svrAddr) {
 }
 
 // Receive one packet from the client
-static struct sockaddr_in *udprecvcontrol(int sd) {
+static int udprecvcontrol(struct sockaddr *svr_addr, int sd) {
 	int n;
-	int svrLen = sizeof(svrAddr);
-
+	int svr_len = sizeof(*svr_addr);
 	// Clear message buffer
 	memset(msg, 0x0, MAX_MSG);
-	// receive message
-	printf("Waiting\n");
-	n = recvfrom(sd, (char*)msg, MAX_MSG, 0, (struct sockaddr *) &svrAddr, &svrLen);
-	printf("Got %d\n", n);
-	if (n<0)
-		return (struct sockaddr_in *)NULL;
-	return &svrAddr;
+	// Receive message
+	// Allow 2s for response
+	int count = 10;
+	int success = FALSE;
+	while (--count > 0) {
+		n = recvfrom(sd, (char*)msg, MAX_MSG, 0, svr_addr, &svr_len);
+		if (n > 0) {
+			success = TRUE;
+			break;
+		}
+		else {
+			Sleep(200);
+		}
+	}
+	
+	return success;
 }

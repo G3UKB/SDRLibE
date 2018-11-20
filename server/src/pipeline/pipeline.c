@@ -89,8 +89,6 @@ int pipeline_init(Pipeline *ppl) {
 
 	// Allocate the local audio temp buffer
 	f_local_audio = safealloc(ptr->dsp_lr_sz*2, sizeof(char), "TEMP_AUDIO_BUFF");
-	// Init local audio
-	audio_init();
 
 	// Allocate the display temp buffer
 	f_display = (float *)safealloc(ppl->args->general.iq_blk_sz * 2, sizeof(float), "TEMP_DISPLAY_BUFF");
@@ -193,6 +191,7 @@ static void *pipeline_imp(void *data) {
 		// Wait for work
 		pthread_mutex_lock(ppl->pipeline_mutex);
 		pthread_cond_wait(ppl->pipeline_con, ppl->pipeline_mutex);
+		
 		// Check if we were woken for a termination
 		if (ppl->terminate) {
 			break;
@@ -539,10 +538,11 @@ static void do_local_audio(Pipeline *ppl, Transforms *ptr) {
 			f_local_audio[k+3] = (unsigned char)((RorQ >> 8) & 0xff);
 		}
 		// Take the output from DSP dsp_ch_left and dsp_ch_right and write it to the ring buffer
+		//printf("Ring buffer: %d, %d\n", ringb_write_space(ppl->local_audio.local_output[i].rb_la_out), ptr->dsp_lr_sz * 2);
 		if (ringb_write_space (ppl->local_audio.local_output[i].rb_la_out) >= ptr->dsp_lr_sz*2) {
 			ringb_write (ppl->local_audio.local_output[i].rb_la_out, f_local_audio, ptr->dsp_lr_sz*2);
 		} else {
-			send_message("c.pipeline", "No space in audio ring buffer");
+			//send_message("c.pipeline", "No space in audio ring buffer");
 		}
 		// See if we need to start the stream
 		if (!ppl->local_audio.local_output[i].open) {

@@ -78,7 +78,7 @@ void check_ep2_seq(unsigned char* ep2) {
 		// Cycled
 		EP2_SEQ_CHK = 0;
 	}
-	else if (EP2_SEQ_CHK++ != seq) {
+	else if (++EP2_SEQ_CHK != seq) {
 		// Oops
 		printf("Seq error, expected %d, got %d!", EP2_SEQ_CHK, seq);
 		// Reset
@@ -88,12 +88,20 @@ void check_ep2_seq(unsigned char* ep2) {
 
 // Local functions
 // Convert a 4 byte sequence in BE to an unsigned int LE
+// These conversions are wrong!!
 static unsigned int big_to_little_endian(unsigned char* big_endian) {
+	/*
 	unsigned int little_endian =
 		((big_endian[3]) & 0xff) |			// move byte 3 to byte 0
 		((big_endian[2]) & 0xff00) |		// move byte 2 to byte 1
 		((big_endian[1]) & 0xff0000) |		// move byte 1 to byte 2
 		((big_endian[0]) & 0xff000000);		// move byte 0 to byte 3
+	*/
+	unsigned int little_endian;
+	little_endian = big_endian[0];
+	little_endian = (little_endian << 8) | big_endian[1];
+	little_endian = (little_endian << 8) | big_endian[2];
+	little_endian = (little_endian << 8) | big_endian[3];
 	return little_endian;
 }
 

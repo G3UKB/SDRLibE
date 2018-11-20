@@ -61,8 +61,8 @@ int revert_sd(int sd) {
 	int sendbuff = 32000;
 	int recvbuff = 32000;
 	struct timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = 10;
+	tv.tv_sec = 1;
+	tv.tv_usec = 0;
 
 	// Turn off broadcast
 	if (setsockopt(sd, SOL_SOCKET, SO_BROADCAST, (const char*)&broadcast, sizeof broadcast) == -1) {

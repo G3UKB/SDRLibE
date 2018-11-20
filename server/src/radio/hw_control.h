@@ -37,6 +37,6 @@ bob@bobcowdery.plus.com
 #define DISCOVERY_RESP 3
 
 // Prototypes
-struct sockaddr_in *do_discover(int sd);
+int do_discover(struct sockaddr_in *srv_addr, int sd);
 int do_start(int sd, struct sockaddr_in *svrAddr, int wbs);
 int do_stop(int sd, struct sockaddr_in *svrAddr);

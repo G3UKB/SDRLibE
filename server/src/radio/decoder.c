@@ -41,8 +41,6 @@ void frame_decode(int n_smpls, int n_rx, int rate, int in_sz, char *ptr_in_bytes
 
 	// Data exchange operates on the ring buffers.
 	// 	if there is room to add the data the data is written, else the block is skipped
-	//	if there is sufficient output data to satisfy the request it is returned and the
-	//	function returns TRUE else it returns FALSE
 	//
 	// The data is pre-processed such that only contiguous data is written to the ring buffers
 	// separated into IQ and Mic data.
