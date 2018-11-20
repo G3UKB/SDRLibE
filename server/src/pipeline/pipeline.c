@@ -542,7 +542,7 @@ static void do_local_audio(Pipeline *ppl, Transforms *ptr) {
 		if (ringb_write_space (ppl->local_audio.local_output[i].rb_la_out) >= ptr->dsp_lr_sz*2) {
 			ringb_write (ppl->local_audio.local_output[i].rb_la_out, f_local_audio, ptr->dsp_lr_sz*2);
 		} else {
-			//send_message("c.pipeline", "No space in audio ring buffer");
+			send_message("c.pipeline", "No space in audio ring buffer");
 		}
 		// See if we need to start the stream
 		if (!ppl->local_audio.local_output[i].open) {

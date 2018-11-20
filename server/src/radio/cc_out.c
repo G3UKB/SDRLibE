@@ -243,13 +243,15 @@ unsigned char* cc_out_next_seq() {
 	cc_array = cc_out_array[cc_id];
 	
 	// Manage the MOX bit
-	if (cc_mox_state) {
-		// Need to set the MOX bit
-		cc_array[0] = cc_array[0] | 0x01;
-	}
-	else {
-		// Need to reset the MOX bit
-		cc_array[0] = cc_array[0] & 0xfe;
+	if (cc_id == 0) {
+		if (cc_mox_state) {
+			// Need to set the MOX bit
+			cc_array[0] = cc_array[0] | 0x01;
+		}
+		else {
+			// Need to reset the MOX bit
+			cc_array[0] = cc_array[0] & 0xfe;
+		}
 	}
 
 	// Bump the cc_id
@@ -257,6 +259,10 @@ unsigned char* cc_out_next_seq() {
 	if (cc_id > MAX_CC) cc_id = 0;
 
 	pthread_mutex_unlock(&cc_out_mutex);
+	//for (int i = 0; i < 5; i++) {
+	//	printf("%2x ", cc_array[i]);
+	//}
+	//printf("\n");
 	return cc_array;
 }
 
@@ -289,7 +295,7 @@ unsigned char cc_out_set_bits(int target, unsigned char *bits_array, unsigned ch
 }
 
 // Update the setting
-void update_setting(cc_array_idx, cc_byte_idx, value, bit_array, bit_msk) {
+void update_setting(cc_byte_idx, cc_array_idx, value, bit_array, bit_msk) {
 	unsigned char b = cc_out_get_byte(cc_array_idx, cc_byte_idx);
 	unsigned char new_b = cc_out_set_bits(value, bit_array, b, bit_msk);
 	cc_out_put_byte(cc_array_idx, cc_byte_idx, new_b);
@@ -483,8 +489,8 @@ void cc_out_set_rx_3_freq(unsigned int freq_in_hz) {
 
 void cc_out_set_tx_freq(unsigned int freq_in_hz) {
 	// Set NCO-1
-	unsigned char* cc_array = cc_out_array[B_RX1_TX_F];
-	cc_out_common_set_freq(freq_in_hz, cc_array);
+	//unsigned char* cc_array = cc_out_array[B_RX1_TX_F];
+	//cc_out_common_set_freq(freq_in_hz, cc_array);
 }
 
 // Initialise the CC arrays

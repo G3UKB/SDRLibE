@@ -80,7 +80,7 @@ void check_ep2_seq(unsigned char* ep2) {
 	}
 	else if (++EP2_SEQ_CHK != seq) {
 		// Oops
-		printf("Seq error, expected %d, got %d!", EP2_SEQ_CHK, seq);
+		//printf("Seq error, expected %d, got %d!", EP2_SEQ_CHK, seq);
 		// Reset
 		EP2_SEQ_CHK = seq;
 	}
