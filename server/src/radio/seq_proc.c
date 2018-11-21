@@ -31,8 +31,7 @@ bob@bobcowdery.plus.com
 unsigned int MAX_SEQ = 0;
 unsigned int EP2_SEQ = 0;
 unsigned int EP4_SEQ = 0;
-unsigned int EP6_SEQ = 0;
-unsigned int EP2_SEQ_CHK = -1;
+unsigned int EP6_SEQ_CHK = -1;
 unsigned char be_seq[4] = { 0,0,0,0 };
 
 // Local func declaration
@@ -49,6 +48,7 @@ void seq_init() {
 unsigned char* next_ep2_seq() {
 	// Bump seq
 	EP2_SEQ = next_seq(EP2_SEQ);
+	//printf("Next seq %d\n", EP2_SEQ);
 	// Return this as a byte array in BE format
 	return little_to_big_endian(EP2_SEQ);
 }
@@ -60,43 +60,28 @@ unsigned char*  next_ep4_seq() {
 	return little_to_big_endian(EP4_SEQ);
 }
 
-unsigned char*  next_ep6_seq() {
-	// Bump seq
-	EP6_SEQ = next_seq(EP6_SEQ);
-	// Return this as a byte array in BE format
-	return little_to_big_endian(EP6_SEQ);
-}
-
-// Check incoming EP2 seq number
-void check_ep2_seq(unsigned char* ep2) {
-	unsigned int seq = big_to_little_endian(ep2);
-	if (EP2_SEQ_CHK == -1) {
+// Check incoming EP6 seq number
+void check_ep6_seq(unsigned char* ep6) {
+	unsigned int seq = big_to_little_endian(ep6);
+	if (EP6_SEQ_CHK == -1) {
 		// First time so set to given sequence
-		EP2_SEQ_CHK = seq;
+		EP6_SEQ_CHK = seq;
 	}
 	else if (seq == 0) {
 		// Cycled
-		EP2_SEQ_CHK = 0;
+		EP6_SEQ_CHK = 0;
 	}
-	else if (++EP2_SEQ_CHK != seq) {
+	else if (++EP6_SEQ_CHK != seq) {
 		// Oops
-		//printf("Seq error, expected %d, got %d!", EP2_SEQ_CHK, seq);
+		printf("Seq error, expected %d, got %d!\n", EP6_SEQ_CHK, seq);
 		// Reset
-		EP2_SEQ_CHK = seq;
+		EP6_SEQ_CHK = seq;
 	}
 }
 
 // Local functions
 // Convert a 4 byte sequence in BE to an unsigned int LE
-// These conversions are wrong!!
 static unsigned int big_to_little_endian(unsigned char* big_endian) {
-	/*
-	unsigned int little_endian =
-		((big_endian[3]) & 0xff) |			// move byte 3 to byte 0
-		((big_endian[2]) & 0xff00) |		// move byte 2 to byte 1
-		((big_endian[1]) & 0xff0000) |		// move byte 1 to byte 2
-		((big_endian[0]) & 0xff000000);		// move byte 0 to byte 3
-	*/
 	unsigned int little_endian;
 	little_endian = big_endian[0];
 	little_endian = (little_endian << 8) | big_endian[1];
@@ -107,10 +92,10 @@ static unsigned int big_to_little_endian(unsigned char* big_endian) {
 
 // Convert an unsigned int LE to a  4 byte sequence in BE
 static unsigned char* little_to_big_endian(unsigned int little_endian) {
-	be_seq[3] = little_endian & 0xff;		// move byte 3 to byte 0
-	be_seq[2] = little_endian & 0xff00;		// move byte 2 to byte 1
-	be_seq[1] = little_endian & 0xff0000;	// move byte 1 to byte 2
-	be_seq[0] = little_endian & 0xff000000;	// move byte 0 to byte 3
+	be_seq[3] = little_endian & 0xff;			// move byte 3 to byte 0
+	be_seq[2] = (little_endian >> 8) & 0xff;	// move byte 2 to byte 1
+	be_seq[1] = (little_endian >> 16) & 0xff;	// move byte 1 to byte 2
+	be_seq[0] = (little_endian >> 24) & 0xff;	// move byte 0 to byte 3
 	return be_seq;
 }
 

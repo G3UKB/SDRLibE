@@ -165,7 +165,7 @@ static void udprecvdata(UDPReaderThreadData* td) {
 				// Extract and chack the sequence number
 				//  2    1   1   4
 				// Sync Cmd End Seq
-				check_ep2_seq(frame + 4);
+				check_ep6_seq(frame + 4);
 				// Extract data
 				// For 1,2 radios the entire dataframe is used
 				// For 3 radios there are 4 padding bytes in each frame
