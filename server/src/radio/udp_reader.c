@@ -158,38 +158,43 @@ static void udprecvdata(UDPReaderThreadData* td) {
 			// Read a frame size data packet
 			n = recvfrom(sd, (char*)frame, FRAME_SZ, 0, (struct sockaddr*)srv_addr, &addr_sz);
 			if (n == FRAME_SZ) {
-				// We have a frame
-				// First 8 bytes are the header, then 2x512 bytes of data
-				// The sync and cc bytes are the start of each data frame
-				//
-				// Extract and chack the sequence number
-				//  2    1   1   4
-				// Sync Cmd End Seq
-				check_ep6_seq(frame + 4);
-				// Extract data
-				// For 1,2 radios the entire dataframe is used
-				// For 3 radios there are 4 padding bytes in each frame
-				int end_frame_1 = END_FRAME_1;
-				int end_frame_2 = END_FRAME_2;
-				int data_sz = DATA_SZ*2;
-				int num_smpls = NUM_SMPLS_1_RADIO;
-				if (num_rx == 2) {
-					num_smpls = NUM_SMPLS_2_RADIO;
+				if (frame[3] == EP6) {
+					// We have a frame
+					// First 8 bytes are the header, then 2x512 bytes of data
+					// The sync and cc bytes are the start of each data frame
+					//
+					// Extract and chack the sequence number
+					//  2    1   1   4
+					// Sync Cmd End Seq
+					check_ep6_seq(frame + 4);
+					// Extract data
+					// For 1,2 radios the entire dataframe is used
+					// For 3 radios there are 4 padding bytes in each frame
+					int end_frame_1 = END_FRAME_1;
+					int end_frame_2 = END_FRAME_2;
+					int data_sz = DATA_SZ * 2;
+					int num_smpls = NUM_SMPLS_1_RADIO;
+					if (num_rx == 2) {
+						num_smpls = NUM_SMPLS_2_RADIO;
+					}
+					else if (num_rx == 3) {
+						end_frame_1 -= 4;
+						end_frame_2 -= 4;
+						data_sz -= 8;
+						num_smpls = NUM_SMPLS_3_RADIO;
+					}
+					for (i = START_FRAME_1, j = 0; i <= end_frame_1; i++, j++) {
+						frame_data[j] = frame[i];
+					}
+					for (i = START_FRAME_2, j = DATA_SZ; i <= end_frame_2; i++, j++) {
+						frame_data[j] = frame[i];
+					}
+					// Decode the frame and dispatch for processing 
+					frame_decode(num_smpls, num_rx, rate, data_sz, frame_data);
 				}
-				else if (num_rx == 3) {
-					end_frame_1 -= 4;
-					end_frame_2 -= 4;
-					data_sz -= 8;
-					num_smpls = NUM_SMPLS_3_RADIO;
+				else if (frame[3] == EP4) {
+					// Wideband data
 				}
-				for (i = START_FRAME_1, j = 0; i < end_frame_1; i++, j++) {
-					frame_data[j] = frame[i];
-				}
-				for (i = START_FRAME_2, j = DATA_SZ; i < end_frame_2; i++, j++) {
-					frame_data[j] = frame[i];
-				}
-				// Decode the frame and dispatch for processing 
-				frame_decode(num_smpls, num_rx, rate, data_sz, frame_data);
 			}
 		}
 	}

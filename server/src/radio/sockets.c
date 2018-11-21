@@ -58,8 +58,8 @@ int open_bc_socket() {
 // Revert broadcast socket to a normal socket
 int revert_sd(int sd) {
 	int broadcast = 0;
-	int sendbuff = 32000;
-	int recvbuff = 32000;
+	int sendbuff = 192000;
+	int recvbuff = 192000;
 	struct timeval tv;
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;

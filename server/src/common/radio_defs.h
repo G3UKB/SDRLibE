@@ -50,23 +50,25 @@ bob@bobcowdery.plus.com
 #define WBS_SMOOTH 10
 
 // Sequence number
-#define FRAME_SEQ_1_OFFSET 4
+#define FRAME_SEQ_OFFSET 4
 
 // First USB frame
-#define FRAME_SYNC_1_OFFSET FRAME_SEQ_1_OFFSET + 4
+#define FRAME_SYNC_1_OFFSET FRAME_SEQ_OFFSET + 4
 #define FRAME_CC_1_OFFSET FRAME_SYNC_1_OFFSET + 3
-#define START_FRAME_1 16
-#define END_FRAME_1 520
+#define START_FRAME_1 FRAME_CC_1_OFFSET + 5
+#define END_FRAME_1 START_FRAME_1 + 503
 
 // Second USB frame
-#define FRAME_SYNC_2_OFFSET END_FRAME_1
+#define FRAME_SYNC_2_OFFSET START_FRAME_1 + 504
 #define FRAME_CC_2_OFFSET FRAME_SYNC_2_OFFSET + 3
-#define START_FRAME_2 528
-#define END_FRAME_2 1032
+#define START_FRAME_2 FRAME_CC_2_OFFSET + 5
+#define END_FRAME_2 START_FRAME_2 + 503
 
 // Fields
 #define DATA_PKT 0x01
 #define EP2 0x02
+#define EP4 0x04
+#define EP6 0x06
 
 // Samples per radio
 #define NUM_SMPLS_1_RADIO 126

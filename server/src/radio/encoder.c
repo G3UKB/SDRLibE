@@ -56,7 +56,7 @@ void encode_output_data(char *data_frame, char *packet_buffer) {
 	packet_buffer[3] = EP2;
 	// Sequence number
 	char *seq = next_ep2_seq();
-	for( i = FRAME_SEQ_1_OFFSET, j=0 ; i < FRAME_SEQ_1_OFFSET+4 ; i++,j++ ) {
+	for( i = FRAME_SEQ_OFFSET, j=0 ; i < FRAME_SEQ_OFFSET+4 ; i++,j++ ) {
 		packet_buffer[i] = seq[j];
 	}
 	// First USB frame
@@ -84,7 +84,7 @@ void encode_output_data(char *data_frame, char *packet_buffer) {
 		packet_buffer[i] = cc[j];
 	}
 	// Frame data
-	for (i = START_FRAME_2, j = DATA_SZ/2 ; i < END_FRAME_2 ; i++, j++) {
+	for (i = START_FRAME_2, j = DATA_SZ ; i < END_FRAME_2 ; i++, j++) {
 		packet_buffer[i] = data_frame[j];
 	}
 }
