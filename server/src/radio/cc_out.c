@@ -509,5 +509,6 @@ void cc_out_init() {
 	cc_out_alex_tx_rly(TX_RLY_TX1);
 	cc_out_duplex(DUPLEX_OFF);
 	cc_out_num_rx( NUM_RX_1);
-	cc_out_set_rx_1_freq( 7100000 );
+	cc_out_set_rx_1_freq( 7150000 );
+	cc_out_set_tx_freq(7150000);
 }

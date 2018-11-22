@@ -43,5 +43,6 @@ typedef struct UDPWriterThreadData {
 void writer_init(int sd, struct sockaddr_in *srv_addr);
 void prime_radio(int sd, struct sockaddr_in *srv_addr);
 void *udp_writer_imp(void* data);
+void write_data(int sd, struct sockaddr_in *srv_addr);
 
 #endif

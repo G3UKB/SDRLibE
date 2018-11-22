@@ -86,6 +86,12 @@ bob@bobcowdery.plus.com
 #define CH_TRANSITION_NOWAIT 0
 
 //===============================================================
+// Global vars defined in server.c
+// Declare extern to satisfy linker
+extern pthread_mutex_t udp_mutex;
+extern pthread_cond_t udp_con;
+
+//===============================================================
 // Global vars defined in radio_defs.c
 // Declare extern to satisfy linker
 extern int channel_number;

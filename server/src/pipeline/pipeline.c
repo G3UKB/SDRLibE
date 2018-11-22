@@ -222,6 +222,9 @@ static void *pipeline_imp(void *data) {
 			if (ringb_write_space (ppl->rb_out) >= ptr->out_sz) {
 				ringb_write (ppl->rb_out, (char *)ptr->out_buff, ptr->out_sz);
 			}
+			else {
+				send_message("c.pipeline", "No space in output ring buffer");
+			}
 		}
 	}
 	ppl->terminating = TRUE;

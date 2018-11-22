@@ -163,7 +163,7 @@ static void udprecvdata(UDPReaderThreadData* td) {
 					// First 8 bytes are the header, then 2x512 bytes of data
 					// The sync and cc bytes are the start of each data frame
 					//
-					// Extract and chack the sequence number
+					// Extract and check the sequence number
 					//  2    1   1   4
 					// Sync Cmd End Seq
 					check_ep6_seq(frame + 4);
@@ -191,6 +191,12 @@ static void udprecvdata(UDPReaderThreadData* td) {
 					}
 					// Decode the frame and dispatch for processing 
 					frame_decode(num_smpls, num_rx, rate, data_sz, frame_data);
+
+					// Write direct in same thread
+					write_data(sd, srv_addr);
+					// Signal the writer thread to check for output
+					//pthread_cond_signal(&udp_con);
+					//pthread_mutex_unlock(&udp_mutex);
 				}
 				else if (frame[3] == EP4) {
 					// Wideband data

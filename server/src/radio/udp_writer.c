@@ -79,6 +79,21 @@ void prime_radio(int sd, struct sockaddr_in *srv_addr) {
 	}
 }
 
+// Direct write
+void write_data(int sd, struct sockaddr_in *srv_addr) {
+	if (ringb_read_space(rb_out) >= DATA_SZ * 2) {
+		// Enough to satisfy the required output block
+		ringb_read(rb_out, frame_data, DATA_SZ * 2);
+		// Encode into a frame
+		encode_output_data(frame_data, frame);
+		// Dispatch to radio
+		if (sendto(sd, (const char*)frame, FRAME_SZ, 0, (struct sockaddr*) srv_addr, sizeof(*srv_addr)) == -1) {
+			printf("UDP dispatch failed!\n");
+		}
+	}
+}
+
+
 // Start writer thread
 void writer_start() {
 	udp_writer_td->run = TRUE;
@@ -126,13 +141,17 @@ void *udp_writer_imp(void* data){
 
     while (!td->terminate) {
         if (td->run) {
+			// Wait for the reader thread to signal us
+			pthread_mutex_lock(&udp_mutex);
+			pthread_cond_wait(&udp_con, &udp_mutex);
 			// See if enough data available in the ring buffer
-			if (ringb_read_space(rb_out) >= DATA_SZ*2) {
+			while (ringb_read_space(rb_out) >= DATA_SZ*2) {
 				// Enough to satisfy the required output block
 				ringb_read(rb_out, frame_data, DATA_SZ * 2);
 				// Encode into a frame
 				encode_output_data(frame_data, frame);
 				// Dispatch to radio
+				printf("S ");
 				if (sendto(sd, (const char*)frame, FRAME_SZ, 0, (struct sockaddr*) srv_addr, sizeof(*srv_addr)) == -1) {
 					printf("UDP dispatch failed!\n");
 				}
@@ -140,7 +159,6 @@ void *udp_writer_imp(void* data){
         } else {
             Sleep(10.0);
         }
-		Sleep(1.0);
     }
     printf("UDP Writer thread exiting...\n");
     return NULL;

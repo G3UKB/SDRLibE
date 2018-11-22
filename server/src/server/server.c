@@ -44,6 +44,10 @@ int c_server_configured = FALSE;	// Server configured
 int c_server_running = FALSE;		// Radio flag
 int c_server_disp[3] = { FALSE,FALSE,FALSE };
 
+// Locking
+pthread_mutex_t udp_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t udp_con = PTHREAD_COND_INITIALIZER;
+
 // ======================================================
 // Server operations
 
@@ -348,7 +352,7 @@ int DLL_EXPORT c_server_start() {
 	revert_sd(sd);
 	// Init the UDP reader and writer
 	reader_init(sd, &srv_addr, pargs->num_rx, pargs->general.in_rate);
-	writer_init(sd, &srv_addr);
+	//writer_init(sd, &srv_addr);
 
 	// Init sequence processing
 	seq_init();
@@ -385,7 +389,7 @@ int DLL_EXPORT c_radio_start(int wbs) {
 		// Before starting the reader we need to prime the radio
 		prime_radio( sd, &srv_addr );
 		reader_start();
-		writer_start();
+		//writer_start();
 		c_server_running = TRUE;
 	} else {
 		send_message("c.server", "Failed to start radio hardware!");
@@ -415,7 +419,7 @@ int DLL_EXPORT c_radio_stop() {
 	}
 
 	// Stop services
-	writer_stop();
+	//writer_stop();
 	reader_stop();
 	// Stop radio hardware
 	if (!do_stop(sd, &srv_addr)) {
@@ -445,8 +449,8 @@ int DLL_EXPORT c_server_terminate() {
 	// Stop and terminate the pipeline
 	reader_stop();
 	reader_terminate();
-	writer_stop();
-	writer_terminate();
+	//writer_stop();
+	//writer_terminate();
 	pipeline_stop();
 	pipeline_terminate();
 	// Free memory
