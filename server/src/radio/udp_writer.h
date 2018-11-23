@@ -28,21 +28,10 @@ The authors can be reached by email at:
 #define _udp_writer_h
 
 //==================================================================
-// Writer thread
-pthread_t udp_reader_thd;
-
-// Thread data structure for UDP writer
-typedef struct UDPWriterThreadData {
-	int run;
-	int terminate;
-	int socket;
-	struct sockaddr_in *srv_addr;
-}UDPWriterThreadData;
 
 // Prototypes
 void writer_init(int sd, struct sockaddr_in *srv_addr);
 void prime_radio(int sd, struct sockaddr_in *srv_addr);
-void *udp_writer_imp(void* data);
 void write_data(int sd, struct sockaddr_in *srv_addr);
 
 #endif

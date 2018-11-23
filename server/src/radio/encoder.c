@@ -66,10 +66,6 @@ void encode_output_data(char *data_frame, char *packet_buffer) {
 	}
 	// CC bytes
 	cc = cc_out_next_seq();
-	//printf("\nCC1: \n");
-	//for (i = 0; i < 5; i++) {
-	//	printf("%2x ", cc[i]);
-	//}
 	for (i = FRAME_CC_1_OFFSET, j=0 ; i < FRAME_CC_1_OFFSET + 5; i++,j++) {
 		packet_buffer[i] = cc[j];
 	}
@@ -84,10 +80,6 @@ void encode_output_data(char *data_frame, char *packet_buffer) {
 	}
 	// CC bytes
 	cc = cc_out_next_seq();
-	//printf("\nCC2: \n");
-	//for (i = 0; i < 5; i++) {
-	//	printf("%2x ", cc[i]);
-	//}
 	for (i = FRAME_CC_2_OFFSET, j = 0 ; i < FRAME_CC_2_OFFSET + 5 ; i++, j++) {
 		packet_buffer[i] = cc[j];
 	}

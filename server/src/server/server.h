@@ -149,7 +149,7 @@ short DLL_EXPORT c_server_get_peak_input_level();
 void DLL_EXPORT c_server_set_mic_gain(float gain);
 void DLL_EXPORT c_server_set_rf_drive(float drive);
 int DLL_EXPORT c_server_get_display_data(int display_id, void *display_data);
-int DLL_EXPORT c_server_set_display(int ch_id, int display_width);
+void DLL_EXPORT c_server_set_display(int ch_id, int display_width);
 DLL_EXPORT char* c_server_enum_audio_inputs();
 DLL_EXPORT char* c_server_enum_audio_outputs();
 void DLL_EXPORT c_server_change_audio_outputs(int rx, char* audio_ch);

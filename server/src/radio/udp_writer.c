@@ -30,10 +30,6 @@ The authors can be reached by email at:
 // Module vars
 unsigned char frame[FRAME_SZ];
 unsigned char frame_data[DATA_SZ * 2];
-// Threads
-pthread_t writer_thd;
-// Structure pointers
-UDPWriterThreadData *udp_writer_td = NULL;
 
 // Initialise writer thread
 void writer_init(int sd, struct sockaddr_in *srv_addr) {
@@ -44,20 +40,6 @@ void writer_init(int sd, struct sockaddr_in *srv_addr) {
 	*/
 
 	int rc;
-
-	// Allocate thread data structure
-	udp_writer_td = (UDPWriterThreadData *)safealloc(sizeof(UDPWriterThreadData), sizeof(char), "WRITER_TD_STRUCT");
-	// Init the thread data with the Pipeline and Transforms pointers
-	udp_writer_td->run = FALSE;
-	udp_writer_td->terminate = FALSE;
-	udp_writer_td->socket = sd;
-	udp_writer_td->srv_addr = srv_addr;
-
-	// Create the writer thread
-	rc = pthread_create(&writer_thd, NULL, udp_writer_imp, (void *)udp_writer_td);
-	if (rc) {
-		return FALSE;
-	}
 
 	// Clear data arrays
 	memset(frame, 0, sizeof(frame));
@@ -79,7 +61,7 @@ void prime_radio(int sd, struct sockaddr_in *srv_addr) {
 	}
 }
 
-// Direct write
+// Send next packet to radio
 void write_data(int sd, struct sockaddr_in *srv_addr) {
 	if (ringb_read_space(rb_out) >= DATA_SZ * 2) {
 		// Enough to satisfy the required output block
@@ -93,74 +75,4 @@ void write_data(int sd, struct sockaddr_in *srv_addr) {
 	}
 }
 
-
-// Start writer thread
-void writer_start() {
-	udp_writer_td->run = TRUE;
-}
-
-// Start writer thread
-void writer_stop() {
-	udp_writer_td->run = FALSE;
-}
-
-// Terminate the writer
-int writer_terminate() {
-	/* Terminate writer thread
-	*
-	* Arguments:
-	*
-	*/
-
-	int counter;
-
-	udp_writer_td->run = FALSE;
-	udp_writer_td->terminate = TRUE;
-
-	// Signal the thread to ensure it sees the terminate
-
-	// Wait for the thread to exit
-	pthread_join(writer_thd, NULL);
-
-	// Free thread data
-	safefree((char *)udp_writer_td);
-
-	return TRUE;
-}
-
-// Thread entry point for UDP writer processing
-void *udp_writer_imp(void* data){
-    unsigned int new_freq;
-
-    // Get our thread parameters
-	UDPWriterThreadData* td = (UDPWriterThreadData*)data;
-    int sd = td->socket;
-    struct sockaddr_in *srv_addr = td->srv_addr;
-
-    printf("Started UDP writer thread\n");
-
-    while (!td->terminate) {
-        if (td->run) {
-			// Wait for the reader thread to signal us
-			pthread_mutex_lock(&udp_mutex);
-			pthread_cond_wait(&udp_con, &udp_mutex);
-			// See if enough data available in the ring buffer
-			while (ringb_read_space(rb_out) >= DATA_SZ*2) {
-				// Enough to satisfy the required output block
-				ringb_read(rb_out, frame_data, DATA_SZ * 2);
-				// Encode into a frame
-				encode_output_data(frame_data, frame);
-				// Dispatch to radio
-				printf("S ");
-				if (sendto(sd, (const char*)frame, FRAME_SZ, 0, (struct sockaddr*) srv_addr, sizeof(*srv_addr)) == -1) {
-					printf("UDP dispatch failed!\n");
-				}
-			}
-        } else {
-            Sleep(10.0);
-        }
-    }
-    printf("UDP Writer thread exiting...\n");
-    return NULL;
-}
 

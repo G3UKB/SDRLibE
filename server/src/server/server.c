@@ -317,7 +317,7 @@ int DLL_EXPORT c_server_configure(char* args) {
 	int sd = open_bc_socket();
 
 	// Now open the DSP channels
-	// void c_server_open_channel(int ch_type, int channel, int iq_size, int mic_size, int in_rate, int out_rate, int tdelayup, int tslewup, int tdelaydown, int tslewdown)
+	//void c_server_open_channel(int ch_type, int channel, int iq_size, int mic_size, int in_rate, int out_rate, int tdelayup, int tslewup, int tdelaydown, int tslewdown)
 	// RX channels
 	for (int ch = 0; ch < pargs->num_rx; ch++) {
 		c_server_open_channel(CH_RX, pargs->rx[ch].ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
@@ -352,7 +352,6 @@ int DLL_EXPORT c_server_start() {
 	revert_sd(sd);
 	// Init the UDP reader and writer
 	reader_init(sd, &srv_addr, pargs->num_rx, pargs->general.in_rate);
-	//writer_init(sd, &srv_addr);
 
 	// Init sequence processing
 	seq_init();
@@ -389,7 +388,6 @@ int DLL_EXPORT c_radio_start(int wbs) {
 		// Before starting the reader we need to prime the radio
 		prime_radio( sd, &srv_addr );
 		reader_start();
-		//writer_start();
 		c_server_running = TRUE;
 	} else {
 		send_message("c.server", "Failed to start radio hardware!");
@@ -419,7 +417,6 @@ int DLL_EXPORT c_radio_stop() {
 	}
 
 	// Stop services
-	//writer_stop();
 	reader_stop();
 	// Stop radio hardware
 	if (!do_stop(sd, &srv_addr)) {
@@ -449,8 +446,6 @@ int DLL_EXPORT c_server_terminate() {
 	// Stop and terminate the pipeline
 	reader_stop();
 	reader_terminate();
-	//writer_stop();
-	//writer_terminate();
 	pipeline_stop();
 	pipeline_terminate();
 	// Free memory
@@ -818,7 +813,7 @@ short DLL_EXPORT c_server_get_peak_input_level() {
 // Display Processing
 
 // Set display
-int DLL_EXPORT c_server_set_display(int ch_id, int display_width) {
+void DLL_EXPORT c_server_set_display(int ch_id, int display_width) {
 	if (!c_server_disp[ch_id]) {
 		c_server_open_display(ch_id, 2048, 0, 1, 1024, display_width, 3, 10, 4800, 10);
 		c_server_disp[ch_id] = TRUE;
