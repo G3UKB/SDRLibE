@@ -186,7 +186,7 @@ static void udprecvdata(UDPReaderThreadData* td) {
 					for (i = START_FRAME_1, j = 0; i <= end_frame_1; i++, j++) {
 						frame_data[j] = frame[i];
 					}
-					for (i = START_FRAME_2, j = DATA_SZ; i <= end_frame_2; i++, j++) {
+					for (i = START_FRAME_2, j = data_sz/2; i <= end_frame_2; i++, j++) {
 						frame_data[j] = frame[i];
 					}
 					// Decode the frame and dispatch for processing 
@@ -194,9 +194,6 @@ static void udprecvdata(UDPReaderThreadData* td) {
 
 					// Write direct in same thread
 					write_data(sd, srv_addr);
-					// Signal the writer thread to check for output
-					//pthread_cond_signal(&udp_con);
-					//pthread_mutex_unlock(&udp_mutex);
 				}
 				else if (frame[3] == EP4) {
 					// Wideband data

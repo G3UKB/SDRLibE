@@ -358,6 +358,8 @@ int DLL_EXPORT c_server_start() {
 
 	// Init the CC bytes with defaults
 	cc_out_init();
+	// Set no. rx - remember its an index
+	cc_out_num_rx(pargs->num_rx-1);
 
 	send_message("c.server", "Server running");
 
@@ -822,7 +824,7 @@ void DLL_EXPORT c_server_set_display(int ch_id, int display_width) {
 	}
 	// Are we there yet?
 	int count = 0;
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 3; i++) {
 		if (c_server_disp[i]) count++;
 	}
 	if (count == pargs->num_rx) {
