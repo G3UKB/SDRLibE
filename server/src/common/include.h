@@ -35,6 +35,7 @@ bob@bobcowdery.plus.com
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <time.h>
 
 // Libs
 #include "../../../../libs/pthreads/include/pthread.h"

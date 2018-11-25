@@ -813,7 +813,6 @@ short DLL_EXPORT c_server_get_peak_input_level() {
 
 // =========================================================================================================
 // Display Processing
-
 // Set display
 void DLL_EXPORT c_server_set_display(int ch_id, int display_width) {
 	if (!c_server_disp[ch_id]) {

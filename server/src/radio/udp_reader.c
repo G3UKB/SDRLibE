@@ -114,7 +114,7 @@ void *udp_reader_imp(void* data){
 			udprecvdata(td);
 		}
 		else {
-			Sleep(0.1);
+			Sleep(100);
 		}
 	}
 
@@ -148,6 +148,7 @@ static void udprecvdata(UDPReaderThreadData* td) {
 		sel_result = select(0, &read_fd, NULL, NULL, &tv);
 		if (sel_result == 0) {
 			// Timeout
+			printf("Timeout\n");
 			continue;
 		}
 		else if (sel_result == SOCKET_ERROR) {
@@ -198,6 +199,10 @@ static void udprecvdata(UDPReaderThreadData* td) {
 				else if (frame[3] == EP4) {
 					// Wideband data
 				}
+			}
+			else {
+				printf("Small frame %d\n", n);
+				Sleep(50);
 			}
 		}
 	}
