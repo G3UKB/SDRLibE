@@ -24,9 +24,10 @@ warren@wpratt.com
 
 */
 
+
 #include "comm.h"
 
-void main (void *pargs)
+void wdsp_main (void *pargs)
 {
 	int channel = (int)pargs;
 	switch (ch[channel].type)

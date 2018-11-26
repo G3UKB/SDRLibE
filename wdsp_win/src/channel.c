@@ -28,7 +28,7 @@ warren@wpratt.com
 
 void start_thread (int channel)
 {
-	HANDLE handle = (HANDLE) _beginthread(main, 0, (void *)channel);
+	HANDLE handle = (HANDLE) _beginthread(wdsp_main, 0, (void *)channel);
 	SetThreadPriority(handle, THREAD_PRIORITY_HIGHEST);
 }
 
