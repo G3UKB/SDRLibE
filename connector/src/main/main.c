@@ -40,24 +40,35 @@ int main() {
 
 	// Announce
 	printf("SDRLibE Connector starting...\n");
+	printf("(Press any key to exit)\n\n\n");
 
 	// Initialise Winsock 
 	WSADATA wsa;                    // Winsock
 	char last_error[128];           // Holder for last error
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-		printf("Connector: Failed to initialise winsock! [%s]", last_error);
+		printf("Connector: Failed to initialise winsock! [%s]\n", last_error);
 		exit (-1);
 	}
-
+	
 	// Initialise UDP interface
-	if (!conn_udp_init) {
-		printf("Connector: Failed to initialise Connector UDP interface!");
+	if (!conn_udp_init()) {
+		printf("Connector: Failed to initialise Connector UDP interface!\n");
 		exit(-1);
 	}
-
+	
 	// Initialise server
 	c_server_init();
-
-
+	
+	// Run UDP interface
+	conn_udp_start();
+	
+	getch();
+	
+	// Announce
 	printf("SDRLibE Connector closing...\n");
+
+	// Tidy up
+
+
+
 }

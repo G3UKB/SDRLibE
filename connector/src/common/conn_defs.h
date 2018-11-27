@@ -29,5 +29,6 @@ bob@bobcowdery.plus.com
 #define _conn_defs_h
 
 #define CONN_SERVER_PORT 1010
+#define CONN_DATA_SZ 1024
 
 #endif
