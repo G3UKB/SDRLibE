@@ -50,11 +50,12 @@ char data_in[CONN_DATA_SZ];
 
 // Dispatcher table
 // A dictionary entry
-typedef struct { char* str; void(*fun_ptr)(cJSON *); }stringToFunc;
+typedef void(*FNPOINT)(cJSON *);
+typedef struct { char* str; FNPOINT f; }stringToFunc;
 stringToFunc funcCases[] =
 {
-	{ "test1", &test1 },
-	{ "test2", &test2 },
+	{ "test1", test1 },
+	{ "test2", test2 },
 };
 
 // Initialise module
@@ -193,14 +194,14 @@ static void udpconndata(UDPConnThreadData* td) {
 		}
 		else if (sel_result == SOCKET_ERROR) {
 			// Problem
-			printf("Connector: Error in select! [%d]\n", WSAGetLastError());
+			//printf("Connector: Error in select! [%d]\n", WSAGetLastError());
 			// Try to continue
 		}
 		else {
 			// We have a command packet
 			// Read a frame size data packet
 			rd_sz = recvfrom(sd, (char*)data_in, CONN_DATA_SZ, 0, (struct sockaddr*)&conn_cli_addr, &cli_addr_sz);
-			printf("Got data: %d", rd_sz);
+			printf("Got data: %d\n", rd_sz);
 			// Data is in Json encoding
 			// Data format is of the following form:
 			//	{
@@ -216,10 +217,12 @@ static void udpconndata(UDPConnThreadData* td) {
 			// Parse the incoming data
 			root = cJSON_Parse(data_in);
 			// Extract command name
-			strcpy_s(name, sizeof(cJSON_GetObjectItemCaseSensitive(root, "cmd")->valuestring), cJSON_GetObjectItemCaseSensitive(root, "cmd")->valuestring);
-			for (int i = 0; i < sizeof(funcCases); i++) {
+			strcpy_s(name, 30, cJSON_GetObjectItemCaseSensitive(root, "cmd")->valuestring);
+			
+			for (int i = 0; i < 2; i++) {
 				if (strcmp(funcCases[i].str, name) == 0) {
-					(funcCases[i].fun_ptr)(root);
+					(funcCases[i].f)(root);
+					break;
 				}
 			}
 		}
