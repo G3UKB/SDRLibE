@@ -36,6 +36,10 @@ bob@bobcowdery.plus.com
 #include <stdlib.h>
 #include <sys/types.h>
 #include <time.h>
+#include <ws2tcpip.h>
+#include <Inaddr.h>
+
+#define HAVE_STRUCT_TIMESPEC
 
 // Libs
 #include "../../../../libs/pthreads/include/pthread.h"

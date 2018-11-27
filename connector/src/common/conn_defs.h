@@ -1,7 +1,7 @@
 /*
-udp_reader.h
+conn_defs.h
 
-Read UDP radio data stream
+UDP Connector common defs
 
 Copyright (C) 2018 by G3UKB Bob Cowdery
 
@@ -21,31 +21,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 The authors can be reached by email at:
 
-	bob@bobcowdery.plus.com
+bob@bobcowdery.plus.com
+
 */
 
-#ifndef _udp_reader_h
-#define _udp_reader_h
+#ifndef _conn_defs_h
+#define _conn_defs_h
 
-//==================================================================
-// Reader thread
-pthread_t udp_reader_thd;
-
-// Thread data structure for UDP reader/writer
-typedef struct UDPReaderThreadData {
-	int run;
-	int terminate;
-	int num_rx;
-	int rate;
-	int socket;
-	struct sockaddr_in *srv_addr;
-}UDPReaderThreadData;
-
-// Prototypes
-void reader_init(int sd, struct sockaddr_in *srv_addr, int num_rx, int rate);
-void *udp_reader_imp(void* data);
-void reader_start();
-void reader_stop();
-void reader_terminate();
+#define CONN_SERVER_PORT 1010
 
 #endif

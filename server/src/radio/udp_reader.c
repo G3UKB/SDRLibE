@@ -78,7 +78,7 @@ void reader_stop() {
 }
 
 // Terminate the reader
-int reader_terminate() {
+void reader_terminate() {
 	/* Terminate reader thread
 	*
 	* Arguments:
@@ -97,8 +97,6 @@ int reader_terminate() {
 	
 	// Free thread data
 	safefree((char *)udp_reader_td);
-	
-	return TRUE;
 }
 
 // Thread entry point for processing

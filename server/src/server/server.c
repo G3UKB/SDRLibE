@@ -62,18 +62,11 @@ int DLL_EXPORT c_server_init() {
 	*
 	*/
 
-	// Initialise socket lib
-	WSADATA wsa;                    // Winsock
-	char last_error[128];           // Holder for last error
-	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-		strcpy(last_error, "Failed to initialise winsock!");
-		return -1;
-	}
-
 	// Create a broadcast socket
+	char last_error[128];           // Holder for last error
 	if ((sd = open_bc_socket()) == -1) {
-		strcpy(last_error, "Failed to create winsock!");
-		return -1;
+		printf("Server: Failed to create broadcast socket! [%d]", last_error);
+		return FALSE;
 	}
 	c_server_initialised = TRUE;
 	return TRUE;
@@ -307,13 +300,6 @@ int DLL_EXPORT c_server_configure(char* args) {
     hanning_window(WBS_SIZE);
 
 	// Create the socket 
-	// Initialise socket lib
-	WSADATA wsa;                    // Winsock
-	char last_error[128];           // Holder for last error
-	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-		strcpy(last_error, "Failed to initialise winsock!");
-		return -1;
-	}
 	int sd = open_bc_socket();
 
 	// Now open the DSP channels

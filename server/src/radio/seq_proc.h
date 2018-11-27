@@ -29,4 +29,5 @@ bob@bobcowdery.plus.com
 unsigned char* next_ep2_seq();
 unsigned char* next_ep4_seq();
 unsigned char* next_ep6_seq();
+void seq_init();
 void check_ep2_seq(unsigned char* ep2);
