@@ -44,6 +44,8 @@ static void init_wbs();
 static void create_dsp_channels();
 static void create_display_channels();
 static void set_cc_data();
+static void hanning_window(int size);
+static float get_pwr_wbs(int index);
 
 // Module vars
 int sd = 0;							// One and only socket
@@ -64,7 +66,7 @@ pthread_cond_t udp_con = PTHREAD_COND_INITIALIZER;
 // Perform initialisation sufficient to run the radio
 // The rest of initisalisation is performed on server_start as parameters can be changed
 // Must be first call
-int DLL_EXPORT c_server_init() {
+int c_server_init() {
 
 	/*
 	* Initialise the server
@@ -260,7 +262,7 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 // Server control operations
 
 // Server start completes the initialisation and starts services 
-int DLL_EXPORT c_server_start() {
+int c_server_start() {
 	/*
 	 * Start the server services
 	 *
@@ -309,7 +311,7 @@ int DLL_EXPORT c_server_start() {
 }
 
 // Tidy close
-int DLL_EXPORT c_server_terminate() {
+int c_server_terminate() {
 	/*
 	* Close all
 	*
@@ -366,7 +368,7 @@ int DLL_EXPORT c_server_terminate() {
 // Radio management operations
 
 // Perform discovery protocol
-int DLL_EXPORT c_radio_discover() {
+int c_radio_discover() {
 	/*
 	* Discover hardware
 	*
@@ -390,7 +392,7 @@ int DLL_EXPORT c_radio_discover() {
 }
 
 // Start the radio services
-int DLL_EXPORT c_radio_start(int wbs) {
+int c_radio_start(int wbs) {
 	/*
 	* Start the radio services
 	*
@@ -422,7 +424,7 @@ int DLL_EXPORT c_radio_start(int wbs) {
 	return TRUE;
 }
 
-int DLL_EXPORT c_radio_stop() {
+int c_radio_stop() {
 	/*
 	* Stop the radio services
 	*
@@ -458,7 +460,7 @@ int DLL_EXPORT c_radio_stop() {
 // Radio control operations
 
 // Switch RX/TX
-void DLL_EXPORT c_server_mox(int mox_state) {
+void c_server_mox(int mox_state) {
 	/*
 	** Set TX/RX state
 	**
@@ -494,7 +496,7 @@ void DLL_EXPORT c_server_mox(int mox_state) {
 //============================================================================================
 // Radio RX operations
 
-void DLL_EXPORT c_server_set_rx_mode(int channel, int mode) {
+void c_server_set_rx_mode(int channel, int mode) {
 	/*
 	** Set the receiver mode on the given channel
 	**
@@ -506,7 +508,7 @@ void DLL_EXPORT c_server_set_rx_mode(int channel, int mode) {
 	SetRXAMode(channel, mode);
 }
 
-void DLL_EXPORT c_server_set_rx_filter_run(int channel, int run) {
+void c_server_set_rx_filter_run(int channel, int run) {
 	/*
 	** Set the receiver bandpass run mode on the given channel
 	**
@@ -519,7 +521,7 @@ void DLL_EXPORT c_server_set_rx_filter_run(int channel, int run) {
 	SetRXABandpassRun(channel, run);
 }
 
-void DLL_EXPORT c_server_set_rx_filter_freq(int channel, int low, int high) {
+void c_server_set_rx_filter_freq(int channel, int low, int high) {
 	/*
 	** Set the receiver bandpass frequencies on the given channel
 	**
@@ -535,7 +537,7 @@ void DLL_EXPORT c_server_set_rx_filter_freq(int channel, int low, int high) {
 	SetRXABandpassFreqs(channel, low, high);
 }
 
-void DLL_EXPORT c_server_set_rx_filter_window(int channel, int window) {
+void c_server_set_rx_filter_window(int channel, int window) {
 	/*
 	** Set the receiver bandpass window on the given channel
 	**
@@ -550,7 +552,7 @@ void DLL_EXPORT c_server_set_rx_filter_window(int channel, int window) {
 	SetRXABandpassWindow(channel, window);
 }
 
-void DLL_EXPORT c_server_set_agc_mode(int channel, int mode) {
+void c_server_set_agc_mode(int channel, int mode) {
 	/*
 	** Set the receiver bandpass window on the given channel
 	**
@@ -565,7 +567,7 @@ void DLL_EXPORT c_server_set_agc_mode(int channel, int mode) {
 	SetRXAAGCMode(channel, mode);
 }
 
-double DLL_EXPORT c_server_get_rx_meter_data(int channel, int which) {
+double c_server_get_rx_meter_data(int channel, int which) {
 	/*
 	** Get the requested meter data for the given channel
 	**
@@ -580,7 +582,7 @@ double DLL_EXPORT c_server_get_rx_meter_data(int channel, int which) {
 	return GetRXAMeter(channel, which);
 }
 
-void DLL_EXPORT c_server_set_rx_gain(int rx, float gain) {
+void c_server_set_rx_gain(int rx, float gain) {
 	/*
 	** Set the output gain for a receiver
 	**
@@ -595,7 +597,7 @@ void DLL_EXPORT c_server_set_rx_gain(int rx, float gain) {
 //============================================================================================
 // Radio TX operations
 
-void DLL_EXPORT c_server_set_tx_mode(int channel, int mode) {
+void c_server_set_tx_mode(int channel, int mode) {
 	/*
 	** Set the transmitter mode on the given channel
 	**
@@ -607,7 +609,7 @@ void DLL_EXPORT c_server_set_tx_mode(int channel, int mode) {
 	SetTXAMode(channel, mode);
 }
 
-void DLL_EXPORT c_server_set_tx_filter_run(int channel, int run) {
+void c_server_set_tx_filter_run(int channel, int run) {
 	/*
 	** Set the transmitter bandpass run mode on the given channel
 	**
@@ -620,7 +622,7 @@ void DLL_EXPORT c_server_set_tx_filter_run(int channel, int run) {
 	SetTXABandpassRun(channel, run);
 }
 
-void DLL_EXPORT c_server_set_tx_filter_freq(int channel, int low, int high) {
+void c_server_set_tx_filter_freq(int channel, int low, int high) {
 	/*
 	** Set the transmitter bandpass frequencies on the given channel
 	**
@@ -636,7 +638,7 @@ void DLL_EXPORT c_server_set_tx_filter_freq(int channel, int low, int high) {
 	SetTXABandpassFreqs(channel, low, high);
 }
 
-void DLL_EXPORT c_server_set_tx_filter_window(int channel, int window) {
+void c_server_set_tx_filter_window(int channel, int window) {
 	/*
 	** Set the transmitter bandpass window on the given channel
 	**
@@ -651,7 +653,7 @@ void DLL_EXPORT c_server_set_tx_filter_window(int channel, int window) {
 	SetTXABandpassWindow(channel, window);
 }
 
-double DLL_EXPORT c_server_get_tx_meter_data(int channel, int which) {
+double c_server_get_tx_meter_data(int channel, int which) {
 	/*
 	** Get the requested tx meter data for the given channel
 	**
@@ -666,7 +668,7 @@ double DLL_EXPORT c_server_get_tx_meter_data(int channel, int which) {
 	return GetTXAMeter(channel, which);
 }
 
-void DLL_EXPORT c_server_set_mic_gain(float gain) {
+void c_server_set_mic_gain(float gain) {
 	/*
 	** Set the mic gain for the transmitter
 	**
@@ -678,7 +680,7 @@ void DLL_EXPORT c_server_set_mic_gain(float gain) {
 	ppl->mic_gain = gain;
 }
 
-void DLL_EXPORT c_server_set_rf_drive(float drive) {
+void c_server_set_rf_drive(float drive) {
 	/*
 	** Set the rf output for the transmitter
 	**
@@ -690,7 +692,7 @@ void DLL_EXPORT c_server_set_rf_drive(float drive) {
 	ppl->drive = drive;
 }
 
-short DLL_EXPORT c_server_get_peak_input_level() {
+short c_server_get_peak_input_level() {
 	/*
 	** Get the active audio input level
 	**
@@ -707,7 +709,7 @@ short DLL_EXPORT c_server_get_peak_input_level() {
 // Display Processing
 
 // Set display is called when the display width changes during run-time
-void DLL_EXPORT c_server_set_display(int ch_id, int display_width) {
+void c_server_set_display(int ch_id, int display_width) {
 
 	c_impl_server_set_display(	ch_id,
 								pargs->general.fft_size,
@@ -722,7 +724,7 @@ void DLL_EXPORT c_server_set_display(int ch_id, int display_width) {
 }
 
 // Get display data
-int DLL_EXPORT c_server_get_display_data(int display_id, void *display_data) {
+int c_server_get_display_data(int display_id, void *display_data) {
 	/*
 	** Get display data if there is any available.
 	**
@@ -747,25 +749,7 @@ int DLL_EXPORT c_server_get_display_data(int display_id, void *display_data) {
 // =========================================================================================================
 // WBS Processing
 
-void hanning_window(int size) {
-
-    int i,j;
-    float angle = 0.0F;
-    float freq = M_PI*2 / (float) size;
-    int midn = size / 2;
-
-    for (i = 0, j = size - 1, angle = 0.0F; i <= midn; i++, j--, angle += freq) {
-        wbs_window[j] = (wbs_window[i] = 0.5F - 0.5F * (float)cos(angle));
-        //printf("%d:%f ", j, wbs_window[j]);
-    }
-}
-
-float get_pwr_wbs(int index) {
-    //printf("%f ", wbs_out[0][index] * wbs_out[0][index] + wbs_out[1][index] * wbs_out[1][index]);
-    return (float)((wbs_out[index][0] * wbs_out[index][0]) + (wbs_out[index][1] * wbs_out[index][1]));
-}
-
-void DLL_EXPORT c_server_process_wbs_frame(char *ptr_in_bytes) {
+void c_server_process_wbs_frame(char *ptr_in_bytes) {
     // The input data is 4096 16 bit values presented as big-endian values in the byte array
     // We scale the values as follows -
     //  10 log Po = 10 log (FFT(Pin) * G)
@@ -843,7 +827,7 @@ void DLL_EXPORT c_server_process_wbs_frame(char *ptr_in_bytes) {
     wbs_smooth_cnt++;
 }
 
-int DLL_EXPORT c_server_get_wbs_data(int width, void *wbs_data) {
+int c_server_get_wbs_data(int width, void *wbs_data) {
     // The WBS display data is calculated by c_server_process_wbs_frame
     // When a frame is available the buffer pointer is set in the variable wbs_data
     // When no data is available the pointer is set to null in the variable wbs_data
@@ -898,7 +882,7 @@ int DLL_EXPORT c_server_get_wbs_data(int width, void *wbs_data) {
 // ======================================================
 // Audio enumerations
 
-DLL_EXPORT char* c_server_enum_audio_inputs() {
+char* c_server_enum_audio_inputs() {
 
 	/*
 	The enumeration structure is parsed into a Json structure
@@ -949,7 +933,7 @@ DLL_EXPORT char* c_server_enum_audio_inputs() {
 	return cJSON_Print(root);
 }
 
-DLL_EXPORT char* c_server_enum_audio_outputs() {
+char* c_server_enum_audio_outputs() {
 
 	/*
 	The enumeration structure is parsed into a Json structure
@@ -999,7 +983,7 @@ DLL_EXPORT char* c_server_enum_audio_outputs() {
 	return cJSON_Print(root);
 }
 
-void DLL_EXPORT c_server_change_audio_outputs(int rx, char* audio_ch) {
+void c_server_change_audio_outputs(int rx, char* audio_ch) {
 	// Reassign the audio routing
 	// The given receiver will be re-routed to the given device left/right/both channel
 	if (strcmp(audio_ch, LEFT) == 0) {
@@ -1014,7 +998,7 @@ void DLL_EXPORT c_server_change_audio_outputs(int rx, char* audio_ch) {
 	}
 }
 
-void DLL_EXPORT c_server_revert_audio_outputs() {
+void c_server_revert_audio_outputs() {
 	// Revert the audio routing
 	ppl->local_audio.local_output[0].dsp_ch_left = audioDefault.rx_left;
 	ppl->local_audio.local_output[0].dsp_ch_right = audioDefault.rx_right;
@@ -1023,7 +1007,7 @@ void DLL_EXPORT c_server_revert_audio_outputs() {
 //======================================================
 // FFTW wisdom (tune FFTW)
 
-void DLL_EXPORT c_server_make_wisdom(char *dir) {
+void c_server_make_wisdom(char *dir) {
 	/*
 	** Make a wisdom file if it does not exist.
 	**
@@ -1034,76 +1018,76 @@ void DLL_EXPORT c_server_make_wisdom(char *dir) {
 // ======================================================
 // CC data updates
 // ToDo complete implementation
-void DLL_EXPORT c_server_cc_out_alex_attn(int attn) {
+void c_server_cc_out_alex_attn(int attn) {
 	cc_out_alex_attn(attn);
 }
-void DLL_EXPORT c_server_cc_out_preamp(int preamp) {
+void c_server_cc_out_preamp(int preamp) {
 	cc_out_preamp(preamp);
 }
-void DLL_EXPORT c_server_cc_out_alex_rx_ant(int ant) {
+void c_server_cc_out_alex_rx_ant(int ant) {
 	cc_out_alex_rx_ant(ant);
 }
-void DLL_EXPORT c_server_cc_out_alex_rx_out(int out) {
+void c_server_cc_out_alex_rx_out(int out) {
 	cc_out_alex_rx_out(out);
 }
-void DLL_EXPORT c_server_cc_out_alex_tx_rly(int rly) {
+void c_server_cc_out_alex_tx_rly(int rly) {
 	cc_out_alex_tx_rly(rly);
 }
-void DLL_EXPORT c_server_cc_out_duplex(int duplex) {
+void c_server_cc_out_duplex(int duplex) {
 	cc_out_duplex(duplex);
 }
-void DLL_EXPORT c_server_cc_out_alex_auto(int state) {
+void c_server_cc_out_alex_auto(int state) {
 	cc_out_alex_auto(state);
 }
-void DLL_EXPORT c_server_cc_out_alex_hpf_bypass(int bypass) {
+void c_server_cc_out_alex_hpf_bypass(int bypass) {
 	cc_out_alex_hpf_bypass(bypass);
 }
-void DLL_EXPORT c_server_cc_out_lpf_30_20(int setting) {
+void c_server_cc_out_lpf_30_20(int setting) {
 	cc_out_lpf_30_20(setting);
 }
-void DLL_EXPORT c_server_cc_out_lpf_60_40(int setting) {
+void c_server_cc_out_lpf_60_40(int setting) {
 	cc_out_lpf_60_40(setting);
 }
-void DLL_EXPORT c_server_cc_out_lpf_80(int setting) {
+void c_server_cc_out_lpf_80(int setting) {
 	cc_out_lpf_80(setting);
 }
-void DLL_EXPORT c_server_cc_out_lpf_160(int setting) {
+void c_server_cc_out_lpf_160(int setting) {
 	cc_out_lpf_160(setting);
 }
-void DLL_EXPORT c_server_cc_out_lpf_6(int setting) {
+void c_server_cc_out_lpf_6(int setting) {
 	cc_out_lpf_6(setting);
 }
-void DLL_EXPORT c_server_cc_out_lpf_12_10(int setting) {
+void c_server_cc_out_lpf_12_10(int setting) {
 	cc_out_lpf_12_10(setting);
 }
-void DLL_EXPORT c_server_cc_out_lpf_17_15(int setting) {
+void c_server_cc_out_lpf_17_15(int setting) {
 	cc_out_lpf_17_15(setting);
 }
-void DLL_EXPORT c_server_cc_out_hpf_13(int setting) {
+void c_server_cc_out_hpf_13(int setting) {
 	cc_out_hpf_13(setting);
 }
-void DLL_EXPORT c_server_cc_out_hpf_20(int setting) {
+void c_server_cc_out_hpf_20(int setting) {
 	cc_out_hpf_20(setting);
 }
-void DLL_EXPORT c_server_cc_out_hpf_9_5(int setting) {
+void c_server_cc_out_hpf_9_5(int setting) {
 	cc_out_hpf_9_5(setting);
 }
-void DLL_EXPORT c_server_cc_out_hpf_6_5(int setting) {
+void c_server_cc_out_hpf_6_5(int setting) {
 	cc_out_hpf_6_5(setting);
 }
-void DLL_EXPORT c_server_cc_out_hpf_1_5(int setting) {
+void c_server_cc_out_hpf_1_5(int setting) {
 	cc_out_hpf_1_5(setting);
 }
-void DLL_EXPORT c_server_cc_out_set_rx_1_freq(unsigned int freq_in_hz) {
+void c_server_cc_out_set_rx_1_freq(unsigned int freq_in_hz) {
 	cc_out_set_rx_1_freq(freq_in_hz);
 }
-void DLL_EXPORT c_server_cc_out_set_rx_2_freq(unsigned int freq_in_hz) {
+void c_server_cc_out_set_rx_2_freq(unsigned int freq_in_hz) {
 	cc_out_set_rx_2_freq(freq_in_hz);
 }
-void DLL_EXPORT c_server_cc_out_set_rx_3_freq(unsigned int freq_in_hz) {
+void c_server_cc_out_set_rx_3_freq(unsigned int freq_in_hz) {
 	cc_out_set_rx_3_freq(freq_in_hz);
 }
-void DLL_EXPORT c_server_cc_out_set_tx_freq(unsigned int freq_in_hz) {
+void c_server_cc_out_set_tx_freq(unsigned int freq_in_hz) {
 	cc_out_set_tx_freq(freq_in_hz);
 }
 
@@ -1318,4 +1302,23 @@ static void set_cc_data() {
 		cc_out_speed(S_96kHz);
 	else if (rate == 192000)
 		cc_out_speed(S_192kHz);
+}
+
+// WBS functions
+static void hanning_window(int size) {
+
+	int i, j;
+	float angle = 0.0F;
+	float freq = M_PI * 2 / (float)size;
+	int midn = size / 2;
+
+	for (i = 0, j = size - 1, angle = 0.0F; i <= midn; i++, j--, angle += freq) {
+		wbs_window[j] = (wbs_window[i] = 0.5F - 0.5F * (float)cos(angle));
+		//printf("%d:%f ", j, wbs_window[j]);
+	}
+}
+
+static float get_pwr_wbs(int index) {
+	//printf("%f ", wbs_out[0][index] * wbs_out[0][index] + wbs_out[1][index] * wbs_out[1][index]);
+	return (float)((wbs_out[index][0] * wbs_out[index][0]) + (wbs_out[index][1] * wbs_out[index][1]));
 }

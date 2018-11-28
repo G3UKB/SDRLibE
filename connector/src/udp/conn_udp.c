@@ -31,8 +31,21 @@ bob@bobcowdery.plus.com
 // Local functions
 static void *udp_conn_imp(void* data);
 static void udpconndata(UDPConnThreadData* td);
-static void test1(cJSON *data);
-static void test2(cJSON *data);
+static void c_conn_set_in_rate (cJSON *params);
+static void c_conn_set_out_rate (cJSON *params);
+static void c_conn_set_iq_blk_sz (cJSON *params);
+static void c_conn_set_mic_blk_sz (cJSON *params);
+static void c_conn_set_duplex (cJSON *params);
+static void c_conn_set_fft_size (cJSON *params);
+static void c_conn_set_window_type (cJSON *params);
+static void c_conn_set_av_mode (cJSON *params);
+static void c_conn_set_display_width(cJSON *params);
+static void c_conn_set_audio_route(cJSON *params);
+static void c_conn_server_start(cJSON *params);
+static void c_conn_server_terminate(cJSON *params);
+static void c_conn_radio_discover(cJSON *params);
+static void c_conn_radio_start(cJSON *params);
+static void c_conn_radio_stop(cJSON *params);
 
 // The socket
 int connector_socket;
@@ -54,9 +67,27 @@ typedef void(*FNPOINT)(cJSON *);
 typedef struct { char* str; FNPOINT f; }stringToFunc;
 stringToFunc funcCases[] =
 {
-	{ "test1", test1 },
-	{ "test2", test2 },
+	{ "set_in_rate",		c_conn_set_in_rate },
+	{ "set_out_rate",		c_conn_set_out_rate },
+	{ "set_iq_blk_sz",		c_conn_set_iq_blk_sz },
+	{ "set_mic_blk_sz",		c_conn_set_mic_blk_sz },
+	{ "set_duplex",			c_conn_set_duplex },
+	{ "set_fft_size",		c_conn_set_fft_size },
+	{ "set_window_type",	c_conn_set_window_type },
+	{ "set_av_mode",		c_conn_set_av_mode },
+	{ "set_display_width",	c_conn_set_display_width },
+	{ "set_audio_route",	c_conn_set_audio_route },
+	{ "start",				c_conn_server_start },
+	{ "terminate",			c_conn_server_terminate },
+	{ "radio_discover",		c_conn_radio_discover },
+	{ "radio_start",		c_conn_radio_start },
+	{ "radio_stop",			c_conn_radio_stop },
 };
+#define MAX_CASES 15
+
+// Json structures
+cJSON *root;
+cJSON *params;
 
 // Initialise module
 int conn_udp_init() {
@@ -180,7 +211,6 @@ static void udpconndata(UDPConnThreadData* td) {
 	int cli_addr_sz = sizeof(conn_cli_addr);
 
 	// Json vars
-	cJSON * root;
 	char name[30];
 
 	// Loop receiving commands from client
@@ -216,12 +246,13 @@ static void udpconndata(UDPConnThreadData* td) {
 			//
 			// Parse the incoming data
 			root = cJSON_Parse(data_in);
+			params = cJSON_GetObjectItemCaseSensitive(root, "params");
 			// Extract command name
 			strcpy_s(name, 30, cJSON_GetObjectItemCaseSensitive(root, "cmd")->valuestring);
-			
-			for (int i = 0; i < 2; i++) {
+			// Dispatch
+			for (int i = 0; i < MAX_CASES ; i++) {
 				if (strcmp(funcCases[i].str, name) == 0) {
-					(funcCases[i].f)(root);
+					(funcCases[i].f)(params);
 					break;
 				}
 			}
@@ -232,10 +263,73 @@ static void udpconndata(UDPConnThreadData* td) {
 //==========================================================================================
 // Execution functions
 
-static void test1(cJSON *data) {
-	printf("Test1\n");
+static void c_conn_set_in_rate(cJSON *params) {
+	c_server_set_in_rate(cJSON_GetArrayItem(params, 0)->valueint);
 }
 
-static void test2(cJSON *data) {
-	printf("Test2\n");
+static void c_conn_set_out_rate(cJSON *params) {
+	c_server_set_out_rate(cJSON_GetArrayItem(params, 0)->valueint);
+}
+
+static void c_conn_set_iq_blk_sz(cJSON *params) {
+	c_server_set_iq_blk_sz(cJSON_GetArrayItem(params, 0)->valueint);
+}
+
+static void c_conn_set_mic_blk_sz(cJSON *params) {
+	c_server_set_mic_blk_sz(cJSON_GetArrayItem(params, 0)->valueint);
+}
+
+static void c_conn_set_duplex(cJSON *params) {
+	c_server_set_duplex(cJSON_GetArrayItem(params, 0)->valueint);
+}
+
+static void c_conn_set_fft_size(cJSON *params) {
+	c_server_set_fft_size(cJSON_GetArrayItem(params, 0)->valueint);
+}
+
+static void c_conn_set_window_type(cJSON *params) {
+	c_server_set_window_type(cJSON_GetArrayItem(params, 0)->valueint);
+}
+
+static void c_conn_set_av_mode(cJSON *params) {
+	c_server_set_av_mode(cJSON_GetArrayItem(params, 0)->valueint);
+}
+
+static void c_conn_set_display_width(cJSON *params) {
+	c_server_set_display_width(cJSON_GetArrayItem(params, 0)->valueint);
+}
+
+static void c_conn_set_audio_route(cJSON *params) {
+	char location[10];
+	char host_api[50];
+	char dev[30];
+	char channel[10];
+
+	int direction = cJSON_GetArrayItem(params, 0)->valueint;
+	strcpy_s (location, 10, cJSON_GetArrayItem(params, 1)->valuestring);
+	int receiver = cJSON_GetArrayItem(params, 2)->valueint;
+	strcpy_s(host_api, 50, cJSON_GetArrayItem(params, 3)->valuestring);
+	strcpy_s(dev, 30, cJSON_GetArrayItem(params, 4)->valuestring);
+	strcpy_s(channel, 10, cJSON_GetArrayItem(params, 5)->valuestring);
+	c_server_set_audio_route(direction, location, receiver, host_api, dev, channel);
+}
+
+static void c_conn_server_start(cJSON *params) {
+	c_server_start();
+}
+
+static void c_conn_server_terminate(cJSON *params) {
+	c_server_terminate();
+}
+
+static void c_conn_radio_discover(cJSON *params) {
+	c_radio_discover();
+}
+
+static void c_conn_radio_start(cJSON *params) {
+	c_radio_start(cJSON_GetArrayItem(params, 0)->valueint);
+}
+
+static void c_conn_radio_stop(cJSON *params) {
+	c_radio_stop();
 }

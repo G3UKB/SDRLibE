@@ -40,7 +40,6 @@ typedef struct UDPConnThreadData {
 	struct sockaddr_in *srv_addr;
 }UDPConnThreadData;
 
-
 // Prototypes
 int conn_udp_init();
 void conn_udp_start();
