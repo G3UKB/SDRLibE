@@ -100,7 +100,7 @@ void c_server_open_display(int display, int fft_size, int win_type, int sub_span
 	** Open a display unit.
 	**
 	** Arguments:
-	** display			-- display id to use
+	**	display			-- display id to use
 	** 	fft_size		-- fft size to use, power of 2
 	** 	win_type		-- window type
 	** 	sub_spans		-- number of receivers to stitch

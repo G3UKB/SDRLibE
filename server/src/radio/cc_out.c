@@ -216,10 +216,6 @@ unsigned char* cc_out_next_seq() {
 	if (cc_id > MAX_CC) cc_id = 0;
 
 	pthread_mutex_unlock(&cc_out_mutex);
-	//for (int i = 0; i < 5; i++) {
-	//	printf("%2x ", cc_array[i]);
-	//}
-	//printf("\n");
 	return cc_array;
 }
 

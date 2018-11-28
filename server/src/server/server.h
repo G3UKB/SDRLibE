@@ -38,6 +38,10 @@ typedef struct General {
 	int out_rate;
 	int iq_blk_sz;
 	int mic_blk_sz;
+	int fft_size;
+	int window_type;
+	int display_width;
+	int av_mode;
 	int duplex;
 }General;
 typedef struct Route {

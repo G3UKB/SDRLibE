@@ -42,6 +42,7 @@ static int local_audio_setup();
 static void init_gains();
 static void init_wbs();
 static void create_dsp_channels();
+static void create_display_channels();
 static void set_cc_data();
 
 // Module vars
@@ -88,13 +89,14 @@ int DLL_EXPORT c_server_init() {
 	// Set TX defaults
 	pargs->num_tx = 1;
 	// TX has only one value
-	pargs->tx->ch_id = 0;
+	// Set next above RX channels
+	pargs->tx->ch_id = 7;
 	// Set RX defaults
 	// Assume one RX for now
 	pargs->num_rx = 1;
 	// We set up all MAX_RX receivers although we are limited to 3 with current hardware
 	for (i = 0; i < MAX_RX; i++) {
-		// Channel id's are arbitary so just use 0-6
+		// Set channel id's 0-6
 		pargs->rx[i].ch_id = i;
 	}
 	// Set up display channels for MAX_RX receivers
@@ -107,6 +109,10 @@ int DLL_EXPORT c_server_init() {
 	pargs->general.out_rate = 48000;
 	pargs->general.iq_blk_sz = 1024;
 	pargs->general.mic_blk_sz = 1024;
+	pargs->general.fft_size = 2048;
+	pargs->general.window_type = RECTANGULAR;
+	pargs->general.display_width = 600;
+	pargs->general.av_mode = PAN_TIME_AV_LIN;
 	pargs->general.duplex = 0;
 	// Set up some default audio
 	// We can only default to HPSDR audio as we can't select local audio automatically
@@ -174,6 +180,22 @@ void c_server_set_duplex(int duplex) {
 	if (!c_server_running) pargs->general.duplex = duplex;
 }
 
+void c_server_set_fft_size(int size) {
+	if (!c_server_running) pargs->general.fft_size = size;
+}
+
+void c_server_set_window_type(int window_type) {
+	if (!c_server_running) pargs->general.window_type = window_type;
+}
+
+void c_server_set_av_mode(int mode) {
+	if (!c_server_running) pargs->general.av_mode = mode;
+}
+
+void c_server_set_display_width(int width) {
+	if (!c_server_running) pargs->general.display_width = width;
+}
+
 // Optional audio update, otherwsie default is HPSDR for input and output on RX 1
 // If required these must be updated before the server is started
 // This sets up a single audio route
@@ -237,10 +259,10 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 //============================================================================================
 // Server control operations
 
-// Server start complets the initialisation and start services 
+// Server start completes the initialisation and starts services 
 int DLL_EXPORT c_server_start() {
 	/*
-	 * Start the radio services
+	 * Start the server services
 	 *
 	 * Arguments:
 	 *
@@ -252,6 +274,7 @@ int DLL_EXPORT c_server_start() {
 		return FALSE;
 	}
 
+	//==============================================================
 	// Finish initialisation
 	create_ring_buffers();
 	init_pipeline_structure();
@@ -262,24 +285,23 @@ int DLL_EXPORT c_server_start() {
 	init_gains();
 	init_wbs();
 	create_dsp_channels();
+	create_display_channels();
 	set_cc_data();
-
-	// Start pipeline processing
-	pipeline_start();
 
 	// Revert to a normal socket with larger buffers
 	revert_sd(sd);
 	// Init the UDP reader
 	reader_init(sd, &srv_addr, pargs->num_rx, pargs->general.in_rate);
-
 	// Init sequence processing
 	seq_init();
-
 	// Init the CC bytes with defaults
 	cc_out_init();
-	// Set no. rx - remember its an index
-	cc_out_num_rx(pargs->num_rx-1);
 
+	//==============================================================
+	// Start pipeline processing
+	pipeline_start();
+
+	// All done
 	c_server_running = TRUE;
 	printf("c.server: Server running\n");
 
@@ -683,22 +705,20 @@ short DLL_EXPORT c_server_get_peak_input_level() {
 
 // =========================================================================================================
 // Display Processing
-// Set display
+
+// Set display is called when the display width changes during run-time
 void DLL_EXPORT c_server_set_display(int ch_id, int display_width) {
-	if (!c_server_disp[ch_id]) {
-		c_server_open_display(ch_id, 2048, 0, 1, 1024, display_width, 3, 10, 4800, 10);
-		c_server_disp[ch_id] = TRUE;
-	} else {
-		c_impl_server_set_display(ch_id, 2048, 0, 1, 1024, display_width, 3, 10, 4800, 10);
-	}
-	// Are we there yet?
-	int count = 0;
-	for (int i = 0; i < 3; i++) {
-		if (c_server_disp[i]) count++;
-	}
-	if (count == pargs->num_rx) {
-		pipeline_run_display(TRUE);
-	}
+
+	c_impl_server_set_display(	ch_id,
+								pargs->general.fft_size,
+								pargs->general.window_type,
+								1,
+								pargs->general.iq_blk_sz,
+								display_width,
+								pargs->general.av_mode,
+								10,
+								pargs->general.in_rate,
+								10 );
 }
 
 // Get display data
@@ -1002,6 +1022,7 @@ void DLL_EXPORT c_server_revert_audio_outputs() {
 
 //======================================================
 // FFTW wisdom (tune FFTW)
+
 void DLL_EXPORT c_server_make_wisdom(char *dir) {
 	/*
 	** Make a wisdom file if it does not exist.
@@ -1012,24 +1033,7 @@ void DLL_EXPORT c_server_make_wisdom(char *dir) {
 
 // ======================================================
 // CC data updates
-void DLL_EXPORT c_server_cc_out_mox(int state) {
-	cc_out_mox(state);
-}
-void DLL_EXPORT c_server_cc_out_speed(int speed) {
-	cc_out_speed(speed);
-}
-void DLL_EXPORT c_server_cc_out_10_ref(int ref) {
-	cc_out_10_ref(ref);
-}
-void DLL_EXPORT c_server_cc_out_122_ref(int ref) {
-	cc_out_122_ref(ref);
-}
-void DLL_EXPORT c_server_cc_out_config(int config) {
-	cc_out_config(config);
-}
-void DLL_EXPORT c_server_cc_out_mic_src(int src) {
-	cc_out_mic_src(src);
-}
+// ToDo complete implementation
 void DLL_EXPORT c_server_cc_out_alex_attn(int attn) {
 	cc_out_alex_attn(attn);
 }
@@ -1047,9 +1051,6 @@ void DLL_EXPORT c_server_cc_out_alex_tx_rly(int rly) {
 }
 void DLL_EXPORT c_server_cc_out_duplex(int duplex) {
 	cc_out_duplex(duplex);
-}
-void DLL_EXPORT c_server_cc_out_num_rx(int num) {
-	cc_out_num_rx(num);
 }
 void DLL_EXPORT c_server_cc_out_alex_auto(int state) {
 	cc_out_alex_auto(state);
@@ -1105,7 +1106,6 @@ void DLL_EXPORT c_server_cc_out_set_rx_3_freq(unsigned int freq_in_hz) {
 void DLL_EXPORT c_server_cc_out_set_tx_freq(unsigned int freq_in_hz) {
 	cc_out_set_tx_freq(freq_in_hz);
 }
-
 
 //============================================================================================
 //============================================================================================
@@ -1278,6 +1278,24 @@ static void create_dsp_channels() {
 	}
 	// TX channel
 	c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
+}
+
+// Create a display channel for each active receiver
+static void create_display_channels() {
+	
+	for (int ch = 0; ch < pargs->num_rx; ch++) {
+		c_server_open_display(	ch, 
+								pargs->general.fft_size, 
+								pargs->general.window_type, 
+								1, 
+								pargs->general.iq_blk_sz,
+								pargs->general.display_width,
+								pargs->general.av_mode,
+								10, 
+								pargs->general.in_rate,
+								10 );
+	}
+	pipeline_run_display(TRUE);
 }
 
 // Set any new values in the cc data to override defaults

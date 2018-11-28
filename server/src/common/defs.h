@@ -57,6 +57,28 @@ The authors can be reached by email at:
 #define RIGHT "right"
 #define BOTH "both"
 
+// Window types
+enum WINDOW_TYPES {
+	RECTANGULAR,
+	BLACKMAN_HARRIS,
+	HANN,
+	FLAT_TOP,
+	HAMMING,
+	KAISER
+};
+
+// Display average mode
+enum AV_MODE {
+	PAN_PEAK = -1,
+	PAN_NONE,
+	PAN_TIME_AV_LIN,
+	PAN_TIME_AV_LOG,
+	PAN_WIN_AV_LIN,
+	PAN_WIN_AV_LOG,
+	PAN_LNF_LIN,
+	PAN_LNF_LOG
+};
+
 #define DIR_IN 0
 #define DIR_OUT 1
 
