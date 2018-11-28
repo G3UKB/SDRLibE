@@ -56,12 +56,6 @@ enum cco_byte_idx {
 };
 
 // Speed
-enum cco_speed {
-	S_48kHz,
-	S_96kHz,
-	S_192kHz,
-	S_384kHz,
-};
 unsigned char cco_speed_b[] = { 0x00, 0x01, 0x10, 0x11 };
 unsigned char cco_speed_m = 0xfc;
 
@@ -101,30 +95,14 @@ unsigned char cco_mic_src_b[] = { 0x00,0x80 };
 unsigned char cco_mic_src_m = 0x7f;
 
 // Alex attenuator
-enum cco_alex_attn {
-	ATTN_0db,
-	ATTN_10db,
-	ATTN_20db,
-	ATTN_30db
-};
 unsigned char cco_alex_attn_b[] = { 0x00,0x01,0x10,0x11 };
 unsigned char cco_alex_attn_m = 0xfc;
 
 // Preamp
-enum cco_preamp {
-	PREAMP_OFF,
-	PREAMP_ON
-};
 unsigned char cco_preamp_b[] = { 0x00,0x04 };
 unsigned char cco_preamp_m = 0xfb;
 
 // Alex RX ant
-enum cco_rx_ant {
-	RX_ANT_NONE,
-	RX_ANT_1,
-	RX_ANT_2,
-	RX_ANT_XV
-};
 unsigned char cco_rx_ant_b[] = { 0x00,0x20,0x40,0x60 };
 unsigned char cco_rx_ant_m = 0x9f;
 
@@ -146,19 +124,10 @@ unsigned char cco_alex_tx_rly_b[] = { 0x00,0x01,0x10 };
 unsigned char cco_alex_tx_rly_m = 0xfc;
 
 // Duplex
-enum cco_duplex {
-	DUPLEX_OFF,
-	DUPLEX_ON
-};
 unsigned char cco_duplex_b[] = { 0x00,0x04 };
 unsigned char cco_duplex_m = 0xfb;
 
 // No.RX
-enum cco_num_rx {
-	NUM_RX_1,
-	NUM_RX_2,
-	NUM_RX_3
-};
 unsigned char cco_num_rx_b[] = { 0x00,0x08,0x10 };
 unsigned char cco_num_rx_m = 0xc7;
 
@@ -166,26 +135,14 @@ unsigned char cco_num_rx_m = 0xc7;
 // Alex filters
 
 // Alex auto
-enum cco_alex_auto {
-	ALEX_AUTO,
-	ALEX_MANUAL
-};
 unsigned char cco_alex_auto_b[] = { 0x00,0x40 };
 unsigned char cco_alex_auto_m = 0xbf;
 
 // Alex HPF bypass
-enum cco_hpf_bypass {
-	ALEX_HPF_DISABLE,
-	ALEX_HPF_ENABLE
-};
 unsigned char cco_hpf_bypass_b[] = { 0x00,0x20 };
 unsigned char cco_hpf_bypass_m = 0xdf;
 
 // Alex LPF/HPF select
-enum cco_alex_lpf_hpf {
-	ALEX_FILT_DISABLE,
-	ALEX_FILT_ENABLE
-};
 
 // LPF Filter selects
 unsigned char cco_alex_lpf_30_20_b[] = { 0x00,0x01 };

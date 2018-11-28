@@ -35,23 +35,33 @@ Server processing called from the Cython layer to implement:
 // Includes
 #include "../common/include.h"
 
+// Local functions
+static void create_ring_buffers();
+static void init_pipeline_structure();
+static int local_audio_setup();
+static void init_gains();
+static void init_wbs();
+static void create_dsp_channels();
+static void set_cc_data();
+
 // Module vars
 int sd = 0;							// One and only socket
 struct sockaddr_in srv_addr;		// Server address structure
 int c_server_initialised = FALSE;	// Set when init completes successfully
-int c_server_on_line = FALSE;		// Set when discover completes successfully
-int c_server_configured = FALSE;	// Server configured
-int c_server_running = FALSE;		// Radio flag
+int c_server_running = FALSE;		// After c_server_start completes
+int c_radio_discovered = FALSE;		// Radio discovered flag
+int c_radio_running = FALSE;		// Radio running flag
 int c_server_disp[3] = { FALSE,FALSE,FALSE };
 
 // Locking
 pthread_mutex_t udp_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t udp_con = PTHREAD_COND_INITIALIZER;
 
-// ======================================================
-// Server operations
+//============================================================================================
+// Server initialisation operations
 
-// Perform minimal initialisation
+// Perform initialisation sufficient to run the radio
+// The rest of initisalisation is performed on server_start as parameters can be changed
 // Must be first call
 int DLL_EXPORT c_server_init() {
 
@@ -62,261 +72,172 @@ int DLL_EXPORT c_server_init() {
 	*
 	*/
 
+	int i;
+
+	//============================================================================================
 	// Create a broadcast socket
 	char last_error[128];           // Holder for last error
 	if ((sd = open_bc_socket()) == -1) {
 		printf("Server: Failed to create broadcast socket! [%d]", last_error);
 		return FALSE;
 	}
-	c_server_initialised = TRUE;
-	return TRUE;
-}
 
-// Set up the server configuration
-int DLL_EXPORT c_server_configure(char* args) {
-
-	/*
-	 * Configure the server
-	 *
-	 * Arguments:
-	 * 	args	--	ptr to a json encoded string
-	 *
-	 */
-
-	// Create 2 ring buffers for input and output samples
-	// Both are byte buffers which accommodate the
-	//	24 bit I/Q and 16 bit mic samples
-	// 	and the 16 bit output samples.
-	size_t iq_ring_sz;
-	size_t mic_ring_sz;
-	AudioDescriptor *padesc;
-	int i, j, num_tx, output_index, next_index, found;
-	int array_len;
-	cJSON * root;
-	cJSON *tuple_tx;
-	cJSON *tuple_rx;
-	cJSON *tuple_disp;
-	cJSON *array_item;
-	cJSON *general;
-	cJSON *audio;
-	cJSON *routes;
-	cJSON *hpsdr;
-	cJSON *local;
-
-    // Parse the json string
-    root = cJSON_Parse(args);
-
-	// Create the Args structure which is the current server state
+	//============================================================================================
+	// Create the args structure and set reasonable defaults
 	pargs = (Args *)safealloc(sizeof(Args), sizeof(char), "ARGS_STRUCT");
-	// Copy the data from the json struct to the args struct
-	pargs->num_tx = cJSON_GetObjectItemCaseSensitive(root, "num_tx")->valueint;
+	// Set TX defaults
+	pargs->num_tx = 1;
 	// TX has only one value
-	tuple_tx = cJSON_GetObjectItemCaseSensitive(root, "tuple_tx");
-	pargs->tx->inst_id = cJSON_GetObjectItemCaseSensitive(tuple_tx, "inst_id")->valueint;
-	pargs->tx->ch_id = cJSON_GetObjectItemCaseSensitive(tuple_tx, "ch_id")->valueint;
-	pargs->num_rx = cJSON_GetObjectItemCaseSensitive(root, "num_rx")->valueint;
-	// RX has an array of up to 7 receivers
-	tuple_rx = cJSON_GetObjectItemCaseSensitive(root, "tuple_rx");
-	array_len = cJSON_GetArraySize(tuple_rx);
-	for (i = 0; i < array_len; i++) {
-         array_item = cJSON_GetArrayItem(tuple_rx, i);
-         pargs->rx[i].inst_id = cJSON_GetObjectItemCaseSensitive(array_item, "inst_id")->valueint;
-         pargs->rx[i].ch_id = cJSON_GetObjectItemCaseSensitive(array_item, "ch_id")->valueint;
+	pargs->tx->ch_id = 0;
+	// Set RX defaults
+	// Assume one RX for now
+	pargs->num_rx = 1;
+	// We set up all MAX_RX receivers although we are limited to 3 with current hardware
+	for (i = 0; i < MAX_RX; i++) {
+		// Channel id's are arbitary so just use 0-6
+		pargs->rx[i].ch_id = i;
 	}
-	tuple_disp = cJSON_GetObjectItemCaseSensitive(root, "tuple_disp");
-	array_len = cJSON_GetArraySize(tuple_disp);
-	for (i = 0; i < array_len; i++) {
-         array_item = cJSON_GetArrayItem(tuple_disp, i);
-         pargs->disp[i].inst_id = cJSON_GetObjectItemCaseSensitive(array_item, "inst_id")->valueint;
-         pargs->disp[i].ch_id = cJSON_GetObjectItemCaseSensitive(array_item, "ch_id")->valueint;
+	// Set up display channels for MAX_RX receivers
+	for (i = 0; i < MAX_RX; i++) {
+		// Display id's are arbitary so just use 0-6
+		pargs->disp[i].ch_id = i;
 	}
-	// General
-    general = cJSON_GetObjectItemCaseSensitive(root, "General");
-    pargs->general.in_rate = cJSON_GetObjectItemCaseSensitive(general, "in_rate")->valueint;
-    pargs->general.out_rate = cJSON_GetObjectItemCaseSensitive(general, "out_rate")->valueint;
-    pargs->general.iq_blk_sz = cJSON_GetObjectItemCaseSensitive(general, "iq_blk_sz")->valueint;
-    pargs->general.mic_blk_sz = cJSON_GetObjectItemCaseSensitive(general, "mic_blk_sz")->valueint;
-    pargs->general.duplex = cJSON_GetObjectItemCaseSensitive(general, "duplex")->valueint;
+	// Set up general configuration to normal values
+	pargs->general.in_rate = 48000;
+	pargs->general.out_rate = 48000;
+	pargs->general.iq_blk_sz = 1024;
+	pargs->general.mic_blk_sz = 1024;
+	pargs->general.duplex = 0;
+	// Set up some default audio
+	// We can only default to HPSDR audio as we can't select local audio automatically
+	// Mic input
+	strcpy(pargs->audio.in_src, HPSDR);
+	strcpy(pargs->audio.in_hostapi, "");
+	strcpy(pargs->audio.in_dev, "");
+	strcpy(pargs->audio.out_sink, "");
+	// Audio output
+	// There are two route arrays, one for HPSDR and one for local
+	// They define which receiver output is routed where
+	// Default such that RX 1 left and right are HPSDR
+	// There are 2 possible HPSDR routes for left and right. 
 
-	// Audio
-    audio = cJSON_GetObjectItemCaseSensitive(root, "Audio");
-    strcpy(pargs->audio.in_src, cJSON_GetObjectItemCaseSensitive(audio, "in_src")->valuestring);
-    strcpy(pargs->audio.in_hostapi, cJSON_GetObjectItemCaseSensitive(audio, "in_hostapi")->valuestring);
-    strcpy(pargs->audio.in_dev, cJSON_GetObjectItemCaseSensitive(audio, "in_dev")->valuestring);
-    strcpy(pargs->audio.out_sink, cJSON_GetObjectItemCaseSensitive(audio, "out_sink")->valuestring);
+	// HPSDR
+	// Put both on rx 1
+	pargs->audio.routing.hpsdr[0].rx = 1;
+	// These 3 values are for compatibility, not used for HPSDR outputs
+	strcpy(pargs->audio.routing.hpsdr[0].srctype, "");
+	strcpy(pargs->audio.routing.hpsdr[0].hostapi, "");
+	strcpy(pargs->audio.routing.hpsdr[0].dev, "");
+	strcpy(pargs->audio.routing.hpsdr[0].ch, BOTH);
+	// Nothing on second channel
+	pargs->audio.routing.hpsdr[0].rx = -1;
+	strcpy(pargs->audio.routing.hpsdr[0].srctype, "");
+	strcpy(pargs->audio.routing.hpsdr[0].hostapi, "");
+	strcpy(pargs->audio.routing.hpsdr[0].dev, "");
+	strcpy(pargs->audio.routing.hpsdr[0].ch, "");
 
-    // Routes
-    routes = cJSON_GetObjectItemCaseSensitive(audio, "Routes");
-    // Routes/hpsdr
-    hpsdr = cJSON_GetObjectItemCaseSensitive(routes, "hpsdr");
-    array_len = cJSON_GetArraySize(hpsdr);
-    for (i = 0; i < array_len; i++) {
-        array_item = cJSON_GetArrayItem(hpsdr, i);
-        pargs->audio.routing.hpsdr[i].rx = cJSON_GetObjectItemCaseSensitive(array_item, "rx")->valueint;
-        // strcpy(pargs->audio.routing.hpsdr[i].srctype, cJSON_GetObjectItemCaseSensitive(array_item, "src_type")->valuestring);
-        strcpy(pargs->audio.routing.hpsdr[i].srctype, "");
-        strcpy(pargs->audio.routing.hpsdr[i].hostapi, cJSON_GetObjectItemCaseSensitive(array_item, "hostapi")->valuestring);
-        strcpy(pargs->audio.routing.hpsdr[i].dev, cJSON_GetObjectItemCaseSensitive(array_item, "dev")->valuestring);
-        strcpy(pargs->audio.routing.hpsdr[i].ch, cJSON_GetObjectItemCaseSensitive(array_item, "ch")->valuestring);
-    }
-
-    // Routes/local
-    local = cJSON_GetObjectItemCaseSensitive(routes, "local");
-    array_len = cJSON_GetArraySize(local);
-	for (i = 0; i < array_len; i++) {
-        array_item = cJSON_GetArrayItem(local, i);
-        pargs->audio.routing.local[i].rx = cJSON_GetObjectItemCaseSensitive(array_item, "rx")->valueint;
-        // strcpy(pargs->audio.routing.local[i].srctype, cJSON_GetObjectItemCaseSensitive(array_item, "src_type")->valuestring);
-        strcpy(pargs->audio.routing.local[i].srctype, "");
-        strcpy(pargs->audio.routing.local[i].hostapi, cJSON_GetObjectItemCaseSensitive(array_item, "hostapi")->valuestring);
-        strcpy(pargs->audio.routing.local[i].dev, cJSON_GetObjectItemCaseSensitive(array_item, "dev")->valuestring);
-        strcpy(pargs->audio.routing.local[i].ch, cJSON_GetObjectItemCaseSensitive(array_item, "ch")->valuestring);
+	// Local
+	// Clear for MAX_RX*2 receivers as each can be a separate channel
+	for (i = 0; i < MAX_RX*2 ; i++) {
+		pargs->audio.routing.local[i].rx = -1;
+		strcpy(pargs->audio.routing.local[i].srctype, "");
+		strcpy(pargs->audio.routing.local[i].hostapi, "");
+		strcpy(pargs->audio.routing.local[i].dev, "");
+		strcpy(pargs->audio.routing.local[i].ch, "");
 	}
 
-	// Create the input ring which accommodates enough samples for 8x DSP block size per receiver
-	// at 6 bytes per sample. The size must then be rounded up to the next power of 2 as required
-	// by the ring buffer.
-	iq_ring_sz = pow(2, ceil(log(pargs->num_rx * pargs->general.iq_blk_sz * 6 * 8)/log(2)));
-	rb_iq_in = ringb_create (iq_ring_sz);
-	// Mic input is similar except 2 bytes per sample
-	// Note, even if there are no TX channels we still need to allocate a ring buffer as the input data
-	// is still piped through (maybe not necessary!)
-	if (pargs->num_tx == 0)
-		num_tx = 1;
-	else
-		num_tx = pargs->num_tx;
-	mic_ring_sz = pow(2, ceil(log(num_tx * pargs->general.mic_blk_sz * 2 * 8)/log(2)));
-	rb_mic_in = ringb_create (mic_ring_sz);
-
-	// At worst (48K) output rate == input rate, otherwise the output rate is lower
-	// Allow the same buffer size so we can never run out.
-	rb_out = ringb_create (iq_ring_sz);
-
-	// Initialise the Pipeline structure
-	// Note that the Args structure is referenced
-	ppl = (Pipeline *)safealloc(sizeof(Pipeline), sizeof(char), "PIPELINE_STRUCT");
-	// Dataflow
-	ppl->run = FALSE;
-	ppl->display_run = FALSE;
-	ppl->terminate = FALSE;
-	ppl->terminating = FALSE;
-	ppl->rb_iq_in = rb_iq_in;
-	ppl->rb_mic_in = rb_mic_in;
-	ppl->rb_out = rb_out;
-	ppl->pipeline_mutex = &pipeline_mutex;
-	ppl->pipeline_con = &pipeline_con;
-	ppl->args = pargs;
-	pipeline_init(ppl);
-
-	// Local audio
-	// We can take input from a local mic input on the PC and push output to a local audio output on the PC
-	// The routing for audio is in args->Audio. This contains device and channel info. What is required later
-	// in the pipeline processing is to know which DSP channel reads or writes data to which audio ring buffer.
-	// The audio processor callback gets kicked for each active stream when data input or output is required.
-	// Allocate the required number of audio processors.
-	// Init local audio
-	audio_init();
-	if (strcmp(ppl->args->audio.in_src, LOCAL) == 0) {
-		// We have local input defined
-		padesc = open_audio_channel(DIR_IN, ppl->args->audio.in_hostapi, ppl->args->audio.in_dev);
-		if (padesc == (AudioDescriptor*)NULL) {
-			send_message("c.server", "Failed to open audio in!");
-			return FALSE;
-		}
-		ppl->local_audio.local_input.rb_la_in = padesc->rb;
-		ppl->local_audio.local_input.stream_id = padesc->stream_id;
-		ppl->local_audio.local_input.stream = padesc->stream;
-		ppl->local_audio.local_input.dsp_ch = ppl->args->tx[0].ch_id;
-		ppl->local_audio.local_input.open = FALSE;
-		ppl->local_audio.local_input.prime = 4;
-	}
-
-	// We always do any local audio that is defined as both can work together
-	// We trust the correctness of the structure here as the generator did all the consistency checks
-	// We convert the routing to something the pipeline can digest more easily and also open a stream which creates
-	// a ring buffer for the interface. The stream is not running at this point.
-	output_index = 0;
-	// We allow for each receiver to have a local monitor when we output to an app such as FLDIGI.
-	for (i=0 ; i < ppl->args->num_rx*2 ; i++) {
-		next_index = 0;
-		found = FALSE;
-		if (ppl->args->audio.routing.local[i].rx != -1) {
-			// We have an assignment for this RX and the RX is configured
-			// Find an entry if we have one
-			next_index = output_index;
-			for(j=0 ; j <= output_index ; j++ ) {
-				if (strcmp(ppl->local_audio.local_output[j].dev, ppl->args->audio.routing.local[i].dev) == 0) {
-					next_index = j;
-					found = TRUE;
-					break;
-				}
-			}
-
-			if (!found) {
-				// Open the audio output channel which returns an AudioDescriptor
-				padesc = open_audio_channel(DIR_OUT, ppl->args->audio.routing.local[i].hostapi, ppl->args->audio.routing.local[i].dev);
-				if (padesc == (AudioDescriptor*)NULL) {
-					send_message("c.server", "Failed to open audio out!");
-					return FALSE;
-				}
-				// Set up the stream side of things
-				strcpy(ppl->local_audio.local_output[next_index].srctype, ppl->args->audio.routing.local[i].srctype);
-				strcpy(ppl->local_audio.local_output[next_index].dev, ppl->args->audio.routing.local[i].dev);
-				ppl->local_audio.local_output[next_index].rb_la_out = padesc->rb;
-				ppl->local_audio.local_output[next_index].stream_id = padesc->stream_id;
-				ppl->local_audio.local_output[next_index].stream = padesc->stream;
-				ppl->local_audio.local_output[next_index].open = FALSE;
-				ppl->local_audio.local_output[next_index].prime = 4;
-				output_index++;
-			}
-			// Assign the dsp channel to the left or right or both audio output(s)
-			if (strcmp(ppl->args->audio.routing.local[i].ch, LEFT) == 0) {
-				ppl->local_audio.local_output[next_index].dsp_ch_left = ppl->args->rx[ppl->args->audio.routing.local[i].rx].ch_id;
-			} else if(strcmp(ppl->args->audio.routing.local[i].ch, RIGHT) == 0) {
-				ppl->local_audio.local_output[next_index].dsp_ch_right = ppl->args->rx[ppl->args->audio.routing.local[i].rx].ch_id;
-			} else {
-				ppl->local_audio.local_output[next_index].dsp_ch_left = ppl->args->rx[ppl->args->audio.routing.local[i].rx].ch_id;
-				ppl->local_audio.local_output[next_index].dsp_ch_right = ppl->args->rx[ppl->args->audio.routing.local[i].rx].ch_id;
-			}
-		}
-	}
-	ppl->local_audio.num_outputs = output_index;
-
-    // Initialise the default audio routing for device 0 so we can revert after temporary changes
-    audioDefault.rx_left = ppl->local_audio.local_output[0].dsp_ch_left;
-    audioDefault.rx_right = ppl->local_audio.local_output[0].dsp_ch_right;
-
-	// Initialise gains
-	for (i=0 ; i < MAX_RX ; i++) {
-		ppl->gain[i] = 0.2;
-	}
-	ppl->mic_gain = 1.0;
-	ppl->drive = 1.0;
-
-	// Initialise for the wide bandscope FFT
-    wbs_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * WBS_SIZE*2);
-    wbs_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * WBS_SIZE*2);
-    wbs_plan = fftw_plan_dft_1d(WBS_SIZE*2, wbs_in, wbs_out, FFTW_FORWARD, FFTW_ESTIMATE);
-    hanning_window(WBS_SIZE);
-
-	// Create the socket 
-	int sd = open_bc_socket();
-
-	// Now open the DSP channels
-	//void c_server_open_channel(int ch_type, int channel, int iq_size, int mic_size, int in_rate, int out_rate, int tdelayup, int tslewup, int tdelaydown, int tslewdown)
-	// RX channels
-	for (int ch = 0; ch < pargs->num_rx; ch++) {
-		c_server_open_channel(CH_RX, pargs->rx[ch].ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
-		SetChannelState(pargs->rx[ch].ch_id, CH_STATE_START, CH_TRANSITION_WAIT);
-	}
-	// TX channel
-	c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
-
-	send_message("c.server", "Server initialised");
-	c_server_configured = TRUE;
+	c_server_initialised = TRUE;
+	printf("c.server: Server initialised\n");
 	return TRUE;
 }
 
+// Optional updates to general configuration
+// If required these must be updated before the server is started
+// Updates are not accepted once the server is running
+void c_server_set_in_rate(int rate) {
+	if( !c_server_running ) pargs->general.in_rate = rate;
+}
+
+void c_server_set_out_rate(int rate) {
+	if (!c_server_running) pargs->general.out_rate = rate;
+}
+
+void c_server_set_iq_blk_sz(int blk_sz) {
+	if (!c_server_running) pargs->general.iq_blk_sz = blk_sz;
+}
+
+void c_server_set_mic_blk_sz(int blk_sz) {
+	if (!c_server_running) pargs->general.mic_blk_sz = blk_sz;
+}
+
+void c_server_set_duplex(int duplex) {
+	if (!c_server_running) pargs->general.duplex = duplex;
+}
+
+// Optional audio update, otherwsie default is HPSDR for input and output on RX 1
+// If required these must be updated before the server is started
+// This sets up a single audio route
+void c_server_set_audio_route(int direction, char* location, int receiver, char* host_api, char* dev, char* channel) {
+	/*
+	* Set an audio channel
+	*
+	* Arguments:
+	* 	direction	--	0=input, 1=output
+	*	location	--	HPSDR or LOCAL
+	*	receiver	--	receiver id 0-n
+	*	host_api	--	the audio host api string
+	*	dev			--	the audio device name
+	*	channel		--	LEFT, RIGHT, BOTH
+	*/
+	int i;
+
+	if (direction == 0) {
+		// Mic input
+		if (strcmp(location, HPSDR) == 0) {
+			strcpy(pargs->audio.in_src, HPSDR);
+			strcpy(pargs->audio.in_hostapi, "");
+			strcpy(pargs->audio.in_dev, "");
+			strcpy(pargs->audio.out_sink, "");
+
+		} else {
+			strcpy(pargs->audio.in_src, LOCAL);
+			strcpy(pargs->audio.in_hostapi, host_api);
+			strcpy(pargs->audio.in_dev, dev);
+			strcpy(pargs->audio.out_sink, channel);
+		}
+	} else {
+		// Audio output
+		if (strcmp(location, HPSDR) == 0) {
+			// HPSDR has two channels available
+			for (i = 0; i < 2; i++) {
+				if (pargs->audio.routing.hpsdr[i].rx == -1) {
+					// Found a free slot
+					pargs->audio.routing.hpsdr[i].rx = receiver;
+					strcpy(pargs->audio.routing.hpsdr[i].srctype, "");
+					strcpy(pargs->audio.routing.hpsdr[i].hostapi, host_api);
+					strcpy(pargs->audio.routing.hpsdr[i].dev, dev);
+					strcpy(pargs->audio.routing.hpsdr[i].ch, channel);
+				}
+			}
+		} else {
+			for (i = 0; i < MAX_RX * 2; i++) {
+				if (pargs->audio.routing.local[i].rx == -1) {
+					// Found a free slot
+					pargs->audio.routing.local[i].rx = receiver;
+					strcpy(pargs->audio.routing.local[i].srctype, "");
+					strcpy(pargs->audio.routing.local[i].hostapi, host_api);
+					strcpy(pargs->audio.routing.local[i].dev, dev);
+					strcpy(pargs->audio.routing.local[i].ch, channel);
+				}
+			}
+		}
+	}
+}
+
+//============================================================================================
+// Server control operations
+
+// Server start complets the initialisation and start services 
 int DLL_EXPORT c_server_start() {
 	/*
 	 * Start the radio services
@@ -326,17 +247,29 @@ int DLL_EXPORT c_server_start() {
 	 */
 
 	// Can't continue unless we are initialised
-	if (!c_server_configured) {
-		send_message("c.server", "Please configure server first!");
+	if (!c_server_initialised) {
+		printf("c.server: Please initialise server first!\n");
 		return FALSE;
 	}
+
+	// Finish initialisation
+	create_ring_buffers();
+	init_pipeline_structure();
+	if (!local_audio_setup()) {
+		printf("c.server: Failed to initialise audio!\n");
+		return FALSE;
+	}
+	init_gains();
+	init_wbs();
+	create_dsp_channels();
+	set_cc_data();
 
 	// Start pipeline processing
 	pipeline_start();
 
 	// Revert to a normal socket with larger buffers
 	revert_sd(sd);
-	// Init the UDP reader and writer
+	// Init the UDP reader
 	reader_init(sd, &srv_addr, pargs->num_rx, pargs->general.in_rate);
 
 	// Init sequence processing
@@ -347,82 +280,20 @@ int DLL_EXPORT c_server_start() {
 	// Set no. rx - remember its an index
 	cc_out_num_rx(pargs->num_rx-1);
 
-	send_message("c.server", "Server running");
+	c_server_running = TRUE;
+	printf("c.server: Server running\n");
 
 	return TRUE;
 }
 
-int DLL_EXPORT c_radio_start(int wbs) {
-	/*
-	* Start the radio services
-	*
-	* Arguments:
-	*	wbs	-- TRUE to start the wide band scope
-	*/
-	// Can't continue unless we are configured
-	if (!c_server_configured) {
-		send_message("c.server", "Please configure server first!");
-		return FALSE;
-	}
-
-	// Already running?
-	if (c_server_running) {
-		send_message("c.server", "Radio is already running!");
-		return FALSE;
-
-	}
-	// Start radio hardware
-	if (do_start(sd, &srv_addr, wbs)) {
-		// Before starting the reader we need to prime the radio
-		prime_radio( sd, &srv_addr );
-		reader_start();
-		c_server_running = TRUE;
-	} else {
-		send_message("c.server", "Failed to start radio hardware!");
-		return FALSE;
-	}
-	return TRUE;
-}
-
-int DLL_EXPORT c_radio_stop() {
-	/*
-	* Stop the radio services
-	*
-	* Arguments:
-	*
-	*/
-
-	// Can't continue unless we are configured
-	if (!c_server_configured) {
-		send_message("c.server", "Please configure server first!");
-		return FALSE;
-	}
-
-	// Are we stopped?
-	if (!c_server_running) {
-		send_message("c.server", "Radio services already stopped!");
-		return FALSE;
-	}
-
-	// Stop services
-	reader_stop();
-	// Stop radio hardware
-	if (!do_stop(sd, &srv_addr)) {
-		send_message("c.server", "Failed to stop radio hardware!");
-		return FALSE;
-	}
-	c_server_running = FALSE;
-
-	return TRUE;
-}
-
+// Tidy close
 int DLL_EXPORT c_server_terminate() {
 	/*
-	 * Stop the pipeline
-	 *
-	 * Arguments:
-	 *
-	 */
+	* Close all
+	*
+	* Arguments:
+	*
+	*/
 
 	// Close all channels
 	for (int i = 0; i < pargs->num_rx; i++) {
@@ -456,18 +327,115 @@ int DLL_EXPORT c_server_terminate() {
 	local_mic = NULL;
 	pan = NULL;
 
-    // WBS
+	// WBS
 	fftw_destroy_plan(wbs_plan);
-    fftw_free(wbs_in); fftw_free(wbs_out);
+	fftw_free(wbs_in); fftw_free(wbs_out);
 
 	// Free ring buffers
 	ringb_free(rb_iq_in);
 	ringb_free(rb_mic_in);
 	ringb_free(rb_out);
 
+	c_server_running = FALSE;
 	return TRUE;
 }
 
+//============================================================================================
+// Radio management operations
+
+// Perform discovery protocol
+int DLL_EXPORT c_radio_discover() {
+	/*
+	* Discover hardware
+	*
+	* Arguments:
+	*
+	*/
+	// Can't continue unless we are initialised
+	if (!c_server_initialised) {
+		printf("c.server: Must call c_server_initialise first!\n");
+		return FALSE;
+	}
+	if (!do_discover(&srv_addr, sd)) {
+		printf("c.server: No radio hardware found!\n");
+		return FALSE;
+	}
+	//printf("\nPort:%d\n", ntohs(srv_addr.sin_port));
+	//printf("\nIP:%s\n", inet_ntoa(srv_addr.sin_addr));
+	c_radio_discovered = TRUE;
+	printf("c.server: Found radio hardware\n");
+	return TRUE;
+}
+
+// Start the radio services
+int DLL_EXPORT c_radio_start(int wbs) {
+	/*
+	* Start the radio services
+	*
+	* Arguments:
+	*	wbs	-- TRUE to start the wide band scope
+	*/
+	// Can't continue unless we are configured
+	if (!c_server_running || !c_radio_discovered) {
+		printf("c.server: Server must be running and radio discovered !\n");
+		return FALSE;
+	}
+
+	// Already running?
+	if (c_radio_running) {
+		printf("c.server: Radio is already running!\n");
+		return FALSE;
+	}
+
+	// Start radio hardware
+	if (do_start(sd, &srv_addr, wbs)) {
+		// Before starting the reader we need to prime the radio
+		prime_radio( sd, &srv_addr );
+		reader_start();
+		c_radio_running = TRUE;
+	} else {
+		printf("c.server: Failed to start radio hardware!\n");
+		return FALSE;
+	}
+	return TRUE;
+}
+
+int DLL_EXPORT c_radio_stop() {
+	/*
+	* Stop the radio services
+	*
+	* Arguments:
+	*
+	*/
+
+	// Can't continue unless we are configured
+	if (!c_server_running || !c_radio_discovered) {
+		printf("c.server: Server must be running and radio discovered!\n");
+		return FALSE;
+	}
+
+	// Are we stopped?
+	if (!c_radio_running) {
+		printf("c.server: Radio is already stopped!\n");
+		return FALSE;
+	}
+
+	// Stop services
+	reader_stop();
+	// Stop radio hardware
+	if (!do_stop(sd, &srv_addr)) {
+		printf("c.server: Failed to stop radio hardware!\n");
+		return FALSE;
+	}
+	c_server_running = FALSE;
+
+	return TRUE;
+}
+
+//============================================================================================
+// Radio control operations
+
+// Switch RX/TX
 void DLL_EXPORT c_server_mox(int mox_state) {
 	/*
 	** Set TX/RX state
@@ -501,94 +469,9 @@ void DLL_EXPORT c_server_mox(int mox_state) {
 	}
 }
 
-void DLL_EXPORT c_server_set_input_samplerate(int channel, int rate) {
-	/*
-	** Set the input sample rate
-	**
-	** Arguments:
-	** 	channel	-- the channel id as returned by open_channel()
-	** 	rate 	-- rate in Hz (48000 | 96000 | 192000 | 384000)
-	**
-	*/
+//============================================================================================
+// Radio RX operations
 
-	if (input_samplerate != rate) {
-		input_samplerate = rate;
-		if (channel != -1) {
-			// Tell DSP
-			SetInputSamplerate(channel, rate);
-			// Tell radio
-			cc_out_speed(rate);
-		}
-	}
-}
-
-void DLL_EXPORT c_server_set_dsp_sz(int channel, int sz) {
-	/*
-	** Set the DSP block size in complex samples
-	**
-	** Arguments:
-	** 	channel	-- the channel id as returned by open_channel()
-	** 	sz 		-- block size
-	**
-	*/
-
-	SetDSPBuffsize(channel, sz);
-}
-
-void DLL_EXPORT c_server_set_tdelayup(int channel, int delay) {
-	/*
-	** Change the delay up time in seconds
-	**
-	** Arguments:
-	** 	channel	-- the channel id as returned by open_channel()
-	** 	delay 	-- delay in seconds
-	**
-	*/
-
-	SetChannelTDelayUp(channel, delay);
-}
-
-void DLL_EXPORT c_server_set_tslewup(int channel, int slew) {
-	/*
-	** Change the slew up time in seconds
-	**
-	** Arguments:
-	** 	channel	-- the channel id as returned by open_channel()
-	** 	slew 	-- slew up time in seconds
-	**
-	*/
-
-	SetChannelTSlewUp(channel, slew);
-}
-
-void DLL_EXPORT c_server_set_tdelaydown(int channel, int delay) {
-	/*
-	** Change the delay up time in seconds
-	**
-	** Arguments:
-	** 	channel	-- the channel id as returned by open_channel()
-	** 	delay 	-- delay in seconds
-	**
-	*/
-
-	SetChannelTDelayDown(channel, delay);
-}
-
-void DLL_EXPORT c_server_set_tslewdown(int channel, int slew) {
-	/*
-	** Change the slew down time in seconds
-	**
-	** Arguments:
-	** 	channel	-- the channel id as returned by open_channel()
-	** 	slew 	-- slew down time in seconds
-	**
-	*/
-
-	SetChannelTSlewDown(channel, slew);
-}
-
-//======================================================
-// Receiver type channel parameters
 void DLL_EXPORT c_server_set_rx_mode(int channel, int mode) {
 	/*
 	** Set the receiver mode on the given channel
@@ -687,8 +570,9 @@ void DLL_EXPORT c_server_set_rx_gain(int rx, float gain) {
 	ppl->gain[rx] = gain;
 }
 
-//======================================================
-// Transmitter type channel parameters
+//============================================================================================
+// Radio TX operations
+
 void DLL_EXPORT c_server_set_tx_mode(int channel, int mode) {
 	/*
 	** Set the transmitter mode on the given channel
@@ -987,35 +871,9 @@ int DLL_EXPORT c_server_get_wbs_data(int width, void *wbs_data) {
 }
 
 
-// =========================================================================================================
+//============================================================================================
+//============================================================================================
 // These functions can be called and may need to be called before server initialisation
-
-// ======================================================
-// Radio Functions
-
-// Perform discovery protocol
-int DLL_EXPORT c_radio_discover() {
-	/*
-	* Discover hardware
-	*
-	* Arguments:
-	*
-	*/
-	// Can't continue unless we are initialised
-	if (!c_server_initialised) {
-		send_message("c.server", "Must call c_server_initialise first!");
-		return FALSE;
-	}
-	if (!do_discover(&srv_addr, sd)) {
-		send_message("c.server", "No radio hardware found!");
-		return FALSE;
-	}
-	//printf("\nPort:%d\n", ntohs(srv_addr.sin_port));
-	//printf("\nIP:%s\n", inet_ntoa(srv_addr.sin_addr));
-	c_server_on_line = TRUE;
-	send_message("c.server", "Radio hardware on-line");
-	return TRUE;
-}
 
 // ======================================================
 // Audio enumerations
@@ -1246,4 +1104,200 @@ void DLL_EXPORT c_server_cc_out_set_rx_3_freq(unsigned int freq_in_hz) {
 }
 void DLL_EXPORT c_server_cc_out_set_tx_freq(unsigned int freq_in_hz) {
 	cc_out_set_tx_freq(freq_in_hz);
+}
+
+
+//============================================================================================
+//============================================================================================
+// Local Functions
+
+// Create ring buffers for the IQ and Mic data streams
+static void create_ring_buffers() {
+
+	int num_tx;
+	size_t iq_ring_sz;
+	size_t mic_ring_sz;
+
+	// Create the input ring which accommodates enough samples for 8x DSP block size per receiver
+	// at 6 bytes per sample. The size must then be rounded up to the next power of 2 as required
+	// by the ring buffer.
+	iq_ring_sz = pow(2, ceil(log(pargs->num_rx * pargs->general.iq_blk_sz * 6 * 8) / log(2)));
+	rb_iq_in = ringb_create(iq_ring_sz);
+	// Mic input is similar except 2 bytes per sample
+	// Note, even if there are no TX channels we still need to allocate a ring buffer as the input data
+	// is still piped through (maybe not necessary!)
+	if (pargs->num_tx == 0)
+		num_tx = 1;
+	else
+		num_tx = pargs->num_tx;
+	mic_ring_sz = pow(2, ceil(log(num_tx * pargs->general.mic_blk_sz * 2 * 8) / log(2)));
+	rb_mic_in = ringb_create(mic_ring_sz);
+
+	// At worst (48K) output rate == input rate, otherwise the output rate is lower
+	// Allow the same buffer size so we can never run out.
+	rb_out = ringb_create(iq_ring_sz);
+}
+
+// Initialise the Pipeline structure
+static void init_pipeline_structure() {
+	
+	ppl = (Pipeline *)safealloc(sizeof(Pipeline), sizeof(char), "PIPELINE_STRUCT");
+	ppl->run = FALSE;
+	ppl->display_run = FALSE;
+	ppl->terminate = FALSE;
+	ppl->terminating = FALSE;
+	ppl->rb_iq_in = rb_iq_in;
+	ppl->rb_mic_in = rb_mic_in;
+	ppl->rb_out = rb_out;
+	ppl->pipeline_mutex = &pipeline_mutex;
+	ppl->pipeline_con = &pipeline_con;
+	ppl->args = pargs;
+	pipeline_init(ppl);
+}
+
+// Set up and allocate local audio
+static int local_audio_setup() {
+	// Local audio
+	// We can take input from a local mic input on the PC and push output to a local audio output on the PC
+	// The routing for audio is in args->Audio. This contains device and channel info. What is required later
+	// in the pipeline processing is to know which DSP channel reads or writes data to which audio ring buffer.
+	// The audio processor callback gets kicked for each active stream when data input or output is required.
+	// Allocate the required number of audio processors.
+	// Init local audio
+
+	AudioDescriptor *padesc;
+	int i, j, output_index, next_index, found;
+
+	audio_init();
+	if (strcmp(ppl->args->audio.in_src, LOCAL) == 0) {
+		// We have local input defined
+		padesc = open_audio_channel(DIR_IN, ppl->args->audio.in_hostapi, ppl->args->audio.in_dev);
+		if (padesc == (AudioDescriptor*)NULL) {
+			printf("c.server: Failed to open audio in!\n");
+			return FALSE;
+		}
+		ppl->local_audio.local_input.rb_la_in = padesc->rb;
+		ppl->local_audio.local_input.stream_id = padesc->stream_id;
+		ppl->local_audio.local_input.stream = padesc->stream;
+		ppl->local_audio.local_input.dsp_ch = ppl->args->tx[0].ch_id;
+		ppl->local_audio.local_input.open = FALSE;
+		ppl->local_audio.local_input.prime = 4;
+	}
+
+	// We always do any local audio that is defined as both can work together
+	// We trust the correctness of the structure here as the generator did all the consistency checks
+	// We convert the routing to something the pipeline can digest more easily and also open a stream which creates
+	// a ring buffer for the interface. The stream is not running at this point.
+	output_index = 0;
+	// We allow for each receiver to have a local monitor when we output to an app such as FLDIGI.
+	for (i = 0; i < ppl->args->num_rx * 2; i++) {
+		next_index = 0;
+		found = FALSE;
+		if (ppl->args->audio.routing.local[i].rx != -1) {
+			// We have an assignment for this RX and the RX is configured
+			// Find an entry if we have one
+			next_index = output_index;
+			for (j = 0; j <= output_index; j++) {
+				if (strcmp(ppl->local_audio.local_output[j].dev, ppl->args->audio.routing.local[i].dev) == 0) {
+					next_index = j;
+					found = TRUE;
+					break;
+				}
+			}
+
+			if (!found) {
+				// Open the audio output channel which returns an AudioDescriptor
+				padesc = open_audio_channel(DIR_OUT, ppl->args->audio.routing.local[i].hostapi, ppl->args->audio.routing.local[i].dev);
+				if (padesc == (AudioDescriptor*)NULL) {
+					printf("c.server: Failed to open audio out!\n");
+					return FALSE;
+				}
+				// Set up the stream side of things
+				strcpy(ppl->local_audio.local_output[next_index].srctype, ppl->args->audio.routing.local[i].srctype);
+				strcpy(ppl->local_audio.local_output[next_index].dev, ppl->args->audio.routing.local[i].dev);
+				ppl->local_audio.local_output[next_index].rb_la_out = padesc->rb;
+				ppl->local_audio.local_output[next_index].stream_id = padesc->stream_id;
+				ppl->local_audio.local_output[next_index].stream = padesc->stream;
+				ppl->local_audio.local_output[next_index].open = FALSE;
+				ppl->local_audio.local_output[next_index].prime = 4;
+				output_index++;
+			}
+			// Assign the dsp channel to the left or right or both audio output(s)
+			if (strcmp(ppl->args->audio.routing.local[i].ch, LEFT) == 0) {
+				ppl->local_audio.local_output[next_index].dsp_ch_left = ppl->args->rx[ppl->args->audio.routing.local[i].rx].ch_id;
+			}
+			else if (strcmp(ppl->args->audio.routing.local[i].ch, RIGHT) == 0) {
+				ppl->local_audio.local_output[next_index].dsp_ch_right = ppl->args->rx[ppl->args->audio.routing.local[i].rx].ch_id;
+			}
+			else {
+				ppl->local_audio.local_output[next_index].dsp_ch_left = ppl->args->rx[ppl->args->audio.routing.local[i].rx].ch_id;
+				ppl->local_audio.local_output[next_index].dsp_ch_right = ppl->args->rx[ppl->args->audio.routing.local[i].rx].ch_id;
+			}
+		}
+	}
+	ppl->local_audio.num_outputs = output_index;
+
+	// Initialise the default audio routing for device 0 so we can revert after temporary changes
+	audioDefault.rx_left = ppl->local_audio.local_output[0].dsp_ch_left;
+	audioDefault.rx_right = ppl->local_audio.local_output[0].dsp_ch_right;
+}
+
+// Set sensible values for the initial gains
+static void init_gains() {
+
+	int i;
+
+	// Audio gain
+	for (i = 0; i < MAX_RX; i++) {
+		ppl->gain[i] = 0.2;
+	}
+	// Mic gain
+	ppl->mic_gain = 1.0;
+	// RF Drive
+	ppl->drive = 1.0;
+}
+
+// Initialise the wide band scope
+static void init_wbs() {
+
+	// Initialise for the wide bandscope FFT
+	wbs_in = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * WBS_SIZE * 2);
+	wbs_out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * WBS_SIZE * 2);
+	wbs_plan = fftw_plan_dft_1d(WBS_SIZE * 2, wbs_in, wbs_out, FFTW_FORWARD, FFTW_ESTIMATE);
+	hanning_window(WBS_SIZE);
+}
+
+// Create a DSP channel for each active receiver
+// Cretae a single TX channel
+static void create_dsp_channels() {
+
+	// RX channels
+	for (int ch = 0; ch < pargs->num_rx; ch++) {
+		c_server_open_channel(CH_RX, pargs->rx[ch].ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
+		SetChannelState(pargs->rx[ch].ch_id, CH_STATE_START, CH_TRANSITION_WAIT);
+	}
+	// TX channel
+	c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
+}
+
+// Set any new values in the cc data to override defaults
+static void set_cc_data() {
+
+	// Set num rx
+	int num_rx = pargs->num_rx;
+	if (num_rx == 1)
+		cc_out_num_rx(NUM_RX_1);
+	else if (num_rx == 2)
+		cc_out_num_rx(NUM_RX_2);
+	else if (num_rx == 3)
+		cc_out_num_rx(NUM_RX_3);
+
+	// Set rate
+	int rate = pargs->general.in_rate;
+	if (rate == 48000)
+		cc_out_speed(S_48kHz);
+	else if (rate == 96000)
+		cc_out_speed(S_96kHz);
+	else if (rate == 192000)
+		cc_out_speed(S_192kHz);
 }

@@ -25,6 +25,58 @@ bob@bobcowdery.plus.com
 
 */
 
+// Speed
+enum cco_speed {
+	S_48kHz,
+	S_96kHz,
+	S_192kHz,
+	S_384kHz,
+};
+// Alex attenuator
+enum cco_alex_attn {
+	ATTN_0db,
+	ATTN_10db,
+	ATTN_20db,
+	ATTN_30db
+};
+// Preamp
+enum cco_preamp {
+	PREAMP_OFF,
+	PREAMP_ON
+};
+// Alex RX ant
+enum cco_rx_ant {
+	RX_ANT_NONE,
+	RX_ANT_1,
+	RX_ANT_2,
+	RX_ANT_XV
+};
+// Duplex
+enum cco_duplex {
+	DUPLEX_OFF,
+	DUPLEX_ON
+};
+// No.RX
+enum cco_num_rx {
+	NUM_RX_1,
+	NUM_RX_2,
+	NUM_RX_3
+};
+// Alex auto
+enum cco_alex_auto {
+	ALEX_AUTO,
+	ALEX_MANUAL
+};
+// Alex HPF bypass
+enum cco_hpf_bypass {
+	ALEX_HPF_DISABLE,
+	ALEX_HPF_ENABLE
+};
+// Alex LPF/HPF select
+enum cco_alex_lpf_hpf {
+	ALEX_FILT_DISABLE,
+	ALEX_FILT_ENABLE
+};
 // Prototypes
 unsigned char* cc_out_next_seq();
 void cc_out_mox(int state);
