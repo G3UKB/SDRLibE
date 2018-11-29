@@ -882,105 +882,15 @@ int c_server_get_wbs_data(int width, void *wbs_data) {
 // ======================================================
 // Audio enumerations
 
-char* c_server_enum_audio_inputs() {
-
-	/*
-	The enumeration structure is parsed into a Json structure
-	then converted to a string to pass back to 8th.
-
-	These are the definitions we receive :-
-	typedef struct DeviceEnum {
-	int direction;
-	int index;
-	char name[50];
-	int channels;
-	char host_api[50];
-	}DeviceEnum;
-
-	typedef struct DeviceEnumList {
-	int entries;
-	DeviceEnum devices[50];
-	}DeviceEnumList;
-
-	We need all the info in order to make the correct routing decisions.
-	*/
-
-	int i;
-	//char * data;
-	cJSON *root;
-	cJSON *inputs;
-	cJSON *items;
-	DeviceEnumList* audio_inputs;
-
-	// Get the enumeration
-	audio_inputs = enum_inputs();
-	// Create the Json root object
-	root = cJSON_CreateObject();
-	// Add an array to hold the enumerations
-	cJSON_AddItemToObject(root, "inputs", inputs = cJSON_CreateArray());
-
-	// Iterate the list and populate the Json structure
-	for (i = 0; i<audio_inputs->entries; i++) {
-		// Create an object to add items to
-		items = cJSON_CreateObject();
-		cJSON_AddStringToObject(items, "name", audio_inputs->devices[i].name);
-		cJSON_AddStringToObject(items, "api", audio_inputs->devices[i].host_api);
-		cJSON_AddNumberToObject(items, "index", audio_inputs->devices[i].index);
-		cJSON_AddNumberToObject(items, "direction", audio_inputs->devices[i].direction);
-		cJSON_AddNumberToObject(items, "channels", audio_inputs->devices[i].channels);
-		cJSON_AddItemToArray(inputs, items);
-	}
-	return cJSON_Print(root);
+DeviceEnumList* c_server_enum_audio_inputs() {
+	
+	return enum_inputs();
 }
 
-char* c_server_enum_audio_outputs() {
+DeviceEnumList* c_server_enum_audio_outputs() {
 
-	/*
-	The enumeration structure is parsed into a Json structure
-	then converted to a string to pass back to 8th.
+	return enum_outputs();
 
-	These are the definitions we receive :-
-	typedef struct DeviceEnum {
-	int direction;
-	int index;
-	char name[50];
-	int channels;
-	char host_api[50];
-	}DeviceEnum;
-
-	typedef struct DeviceEnumList {
-	int entries;
-	DeviceEnum devices[50];
-	}DeviceEnumList;
-
-	We need all the info in order to make the correct routing decisions.
-	*/
-
-	int i;
-	cJSON *root;
-	cJSON *outputs;
-	cJSON *items;
-	DeviceEnumList* audio_outputs;
-
-	// Get the enumeration
-	audio_outputs = enum_outputs();
-	// Create the Json root object
-	root = cJSON_CreateObject();
-	// Add an array to hold the enumerations
-	cJSON_AddItemToObject(root, "outputs", outputs = cJSON_CreateArray());
-
-	// Iterate the list and populate the Json structure
-	for (i = 0; i<audio_outputs->entries; i++) {
-		// Create an object to add items to
-		items = cJSON_CreateObject();
-		cJSON_AddStringToObject(items, "name", audio_outputs->devices[i].name);
-		cJSON_AddStringToObject(items, "api", audio_outputs->devices[i].host_api);
-		cJSON_AddNumberToObject(items, "index", audio_outputs->devices[i].index);
-		cJSON_AddNumberToObject(items, "direction", audio_outputs->devices[i].direction);
-		cJSON_AddNumberToObject(items, "channels", audio_outputs->devices[i].channels);
-		cJSON_AddItemToArray(outputs, items);
-	}
-	return cJSON_Print(root);
 }
 
 void c_server_change_audio_outputs(int rx, char* audio_ch) {

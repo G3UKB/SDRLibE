@@ -162,8 +162,8 @@ int c_server_get_display_data(int display_id, void *display_data);
 void c_server_process_wbs_frame(char *ptr_in_bytes);
 int c_server_get_wbs_data(int width, void *wbs_data);
 // Audio
-char* c_server_enum_audio_inputs();
-char* c_server_enum_audio_outputs();
+DeviceEnumList* c_server_enum_audio_inputs();
+DeviceEnumList* c_server_enum_audio_outputs();
 void c_server_change_audio_outputs(int rx, char* audio_ch);
 void c_server_revert_audio_outputs();
 // Wisdom

@@ -28,25 +28,38 @@ bob@bobcowdery.plus.com
 // Include all server headers
 #include "../common/include.h"
 
+//==========================================================================================
 // Local functions
-static void *udp_conn_imp(void* data);
+static void* udp_conn_imp(void* data);
 static void udpconndata(UDPConnThreadData* td);
-static void c_conn_set_in_rate (cJSON *params);
-static void c_conn_set_out_rate (cJSON *params);
-static void c_conn_set_iq_blk_sz (cJSON *params);
-static void c_conn_set_mic_blk_sz (cJSON *params);
-static void c_conn_set_duplex (cJSON *params);
-static void c_conn_set_fft_size (cJSON *params);
-static void c_conn_set_window_type (cJSON *params);
-static void c_conn_set_av_mode (cJSON *params);
-static void c_conn_set_display_width(cJSON *params);
-static void c_conn_set_audio_route(cJSON *params);
-static void c_conn_server_start(cJSON *params);
-static void c_conn_server_terminate(cJSON *params);
-static void c_conn_radio_discover(cJSON *params);
-static void c_conn_radio_start(cJSON *params);
-static void c_conn_radio_stop(cJSON *params);
+static void send_conn_resp(int sd, struct sockaddr_in conn_cli_addr, char* resp);
+static char* encode_ack_nak(char* data);
 
+// Execution functions
+static char* c_conn_set_in_rate (cJSON *params);
+static char* c_conn_set_out_rate (cJSON *params);
+static char* c_conn_set_iq_blk_sz (cJSON *params);
+static char* c_conn_set_mic_blk_sz (cJSON *params);
+static char* c_conn_set_duplex (cJSON *params);
+static char* c_conn_set_fft_size (cJSON *params);
+static char* c_conn_set_window_type (cJSON *params);
+static char* c_conn_set_av_mode (cJSON *params);
+static char* c_conn_set_display_width(cJSON *params);
+static char* c_conn_set_audio_route(cJSON *params);
+static char* c_conn_server_start(cJSON *params);
+static char* c_conn_server_terminate(cJSON *params);
+static char* c_conn_radio_discover(cJSON *params);
+static char* c_conn_radio_start(cJSON *params);
+static char* c_conn_radio_stop(cJSON *params);
+static char* c_conn_cc_out_set_rx_1_freq(cJSON *params);
+static char* c_conn_cc_out_set_rx_2_freq(cJSON *params);
+static char* c_conn_cc_out_set_rx_3_freq(cJSON *params);
+static char* c_conn_cc_out_set_tx_freq(cJSON *params);
+static char* c_conn_make_wisdom(cJSON *params);
+static char* c_conn_enum_audio_inputs(cJSON *params);
+static char* c_conn_enum_audio_outputs(cJSON *params);
+
+//==========================================================================================
 // The socket
 int connector_socket;
 // Threads
@@ -61,12 +74,17 @@ struct sockaddr_in conn_cli_addr;
 // Receive data packet
 char data_in[CONN_DATA_SZ];
 
+//==========================================================================================
 // Dispatcher table
 // A dictionary entry
-typedef void(*FNPOINT)(cJSON *);
+typedef char*(*FNPOINT)(cJSON *);
 typedef struct { char* str; FNPOINT f; }stringToFunc;
 stringToFunc funcCases[] =
 {
+	{ "set_rx1_freq",		c_conn_cc_out_set_rx_1_freq },
+	{ "set_rx1_freq",		c_conn_cc_out_set_rx_2_freq },
+	{ "set_rx2_freq",		c_conn_cc_out_set_rx_3_freq },
+	{ "set_tx_freq",		c_conn_cc_out_set_tx_freq },
 	{ "set_in_rate",		c_conn_set_in_rate },
 	{ "set_out_rate",		c_conn_set_out_rate },
 	{ "set_iq_blk_sz",		c_conn_set_iq_blk_sz },
@@ -82,6 +100,7 @@ stringToFunc funcCases[] =
 	{ "radio_discover",		c_conn_radio_discover },
 	{ "radio_start",		c_conn_radio_start },
 	{ "radio_stop",			c_conn_radio_stop },
+	{ "wisdom",				c_conn_make_wisdom },
 };
 #define MAX_CASES 15
 
@@ -89,6 +108,7 @@ stringToFunc funcCases[] =
 cJSON *root;
 cJSON *params;
 
+//==========================================================================================
 // Initialise module
 int conn_udp_init() {
 
@@ -131,7 +151,7 @@ int conn_udp_init() {
 		printf("Connector: Failed to create connector thread! [%d]\n", rc);
 		exit(-1);
 	}
-	printf("Initialised Connector UDP interface\n");
+	printf("Connector: Initialised Connector UDP interface\n");
 }
 
 //==========================================================================================
@@ -173,7 +193,7 @@ static void *udp_conn_imp(void* data) {
 	// Get our thread parameters
 	UDPConnThreadData* td = (UDPConnThreadData*)data;
 
-	printf("Started UDP Connector thread\n");
+	printf("Connector: Started UDP Connector thread\n");
 
 	while (!td->terminate) {
 		if (td->run && !td->terminate) {
@@ -185,7 +205,7 @@ static void *udp_conn_imp(void* data) {
 		}
 	}
 
-	printf("UDP Connector thread exiting...\n");
+	printf("Connector: UDP Connector thread exiting...\n");
 	return NULL;
 }
 
@@ -214,13 +234,13 @@ static void udpconndata(UDPConnThreadData* td) {
 	char name[30];
 
 	// Loop receiving commands from client
-	printf("Waiting for commands...\n");
+	printf("Connector: Waiting for commands...\n");
 	while (td->run && !td->terminate) {
 		// Wait for data available
 		sel_result = select(0, &read_fd, NULL, NULL, &tv);
 		if (sel_result == 0) {
 			// Timeout to check for termination etc
-			printf("Timeout\n");
+			printf("Connector: Timeout\n");
 		}
 		else if (sel_result == SOCKET_ERROR) {
 			// Problem
@@ -231,7 +251,6 @@ static void udpconndata(UDPConnThreadData* td) {
 			// We have a command packet
 			// Read a frame size data packet
 			rd_sz = recvfrom(sd, (char*)data_in, CONN_DATA_SZ, 0, (struct sockaddr*)&conn_cli_addr, &cli_addr_sz);
-			printf("Got data: %d\n", rd_sz);
 			// Data is in Json encoding
 			// Data format is of the following form:
 			//	{
@@ -252,7 +271,8 @@ static void udpconndata(UDPConnThreadData* td) {
 			// Dispatch
 			for (int i = 0; i < MAX_CASES ; i++) {
 				if (strcmp(funcCases[i].str, name) == 0) {
-					(funcCases[i].f)(params);
+					char* resp = (funcCases[i].f)(params);
+					send_conn_resp(sd, conn_cli_addr, resp);
 					break;
 				}
 			}
@@ -261,45 +281,108 @@ static void udpconndata(UDPConnThreadData* td) {
 }
 
 //==========================================================================================
+// UDP Writer
+static void send_conn_resp(int sd, struct sockaddr_in conn_cli_addr, char* resp) {
+	int cli_addr_sz = sizeof(conn_cli_addr);
+	if (sendto(sd, (const char*)resp, sizeof(*resp), 0, &conn_cli_addr, cli_addr_sz) == SOCKET_ERROR )
+		printf("Connector: Failed to write response! [%d]\n", WSAGetLastError());
+}
+
+//==========================================================================================
 // Execution functions
-
-static void c_conn_set_in_rate(cJSON *params) {
+// These extract the param list items and call the server function
+// One way calls i.e. no response
+static char* c_conn_set_in_rate(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	input sample rate
+	*/
 	c_server_set_in_rate(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
 }
 
-static void c_conn_set_out_rate(cJSON *params) {
+static char* c_conn_set_out_rate(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	output sample rate
+	*/
 	c_server_set_out_rate(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
 }
 
-static void c_conn_set_iq_blk_sz(cJSON *params) {
+static char* c_conn_set_iq_blk_sz(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	iq block size
+	*/
 	c_server_set_iq_blk_sz(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
 }
 
-static void c_conn_set_mic_blk_sz(cJSON *params) {
+static char* c_conn_set_mic_blk_sz(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	mic block size
+	*/
 	c_server_set_mic_blk_sz(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
 }
 
-static void c_conn_set_duplex(cJSON *params) {
+static char* c_conn_set_duplex(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	duplex flag
+	*/
 	c_server_set_duplex(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
 }
 
-static void c_conn_set_fft_size(cJSON *params) {
+static char* c_conn_set_fft_size(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- fft size for display
+	*/
 	c_server_set_fft_size(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
 }
 
-static void c_conn_set_window_type(cJSON *params) {
+static char* c_conn_set_window_type(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	window type for display
+	*/
 	c_server_set_window_type(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
 }
 
-static void c_conn_set_av_mode(cJSON *params) {
+static char* c_conn_set_av_mode(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	average mode for display
+	*/
 	c_server_set_av_mode(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
 }
 
-static void c_conn_set_display_width(cJSON *params) {
+static char* c_conn_set_display_width(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	display width
+	*/
 	c_server_set_display_width(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
 }
 
-static void c_conn_set_audio_route(cJSON *params) {
+static char* c_conn_set_audio_route(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	direction
+	** 	p1		-- 	location
+	** 	p2		-- 	receiver id
+	** 	p3		-- 	host_api
+	** 	p4		-- 	device name
+	** 	p5		-- 	channel L/R/B
+	*/
 	char location[10];
 	char host_api[50];
 	char dev[30];
@@ -312,24 +395,200 @@ static void c_conn_set_audio_route(cJSON *params) {
 	strcpy_s(dev, 30, cJSON_GetArrayItem(params, 4)->valuestring);
 	strcpy_s(channel, 10, cJSON_GetArrayItem(params, 5)->valuestring);
 	c_server_set_audio_route(direction, location, receiver, host_api, dev, channel);
+	return encode_ack_nak("ACK");
 }
 
-static void c_conn_server_start(cJSON *params) {
-	c_server_start();
+static char* c_conn_server_start(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+	if (c_server_start())
+		return encode_ack_nak("ACK");
+	else
+		return encode_ack_nak("NAK");
 }
 
-static void c_conn_server_terminate(cJSON *params) {
+static char* c_conn_server_terminate(cJSON *params) {
+	/*
+	** Arguments:
+	*/
 	c_server_terminate();
 }
 
-static void c_conn_radio_discover(cJSON *params) {
-	c_radio_discover();
+static char* c_conn_radio_discover(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+	if (c_radio_discover())
+		return encode_ack_nak("ACK");
+	else
+		return encode_ack_nak("NAK");
 }
 
-static void c_conn_radio_start(cJSON *params) {
-	c_radio_start(cJSON_GetArrayItem(params, 0)->valueint);
+static char* c_conn_radio_start(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	WBS flag
+	*/
+	if (c_radio_start(cJSON_GetArrayItem(params, 0)->valueint))
+		return encode_ack_nak("ACK");
+	else
+		return encode_ack_nak("NAK");
 }
 
-static void c_conn_radio_stop(cJSON *params) {
-	c_radio_stop();
+static char* c_conn_radio_stop(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+	if (c_radio_stop())
+		return encode_ack_nak("ACK");
+	else
+		return encode_ack_nak("NAK");
+}
+
+static char* c_conn_cc_out_set_rx_1_freq(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	freq in Hz
+	*/
+	c_server_cc_out_set_rx_1_freq(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_cc_out_set_rx_2_freq(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	freq in Hz
+	*/
+	cc_out_set_rx_2_freq(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_cc_out_set_rx_3_freq(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	freq in Hz
+	*/
+	cc_out_set_rx_3_freq(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_cc_out_set_tx_freq(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	freq in Hz
+	*/
+	cc_out_set_tx_freq(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_make_wisdom(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	directory
+	*/
+	c_server_make_wisdom(cJSON_GetArrayItem(params, 0)->valuestring);
+	return encode_ack_nak("ACK");
+}
+
+// Command/response calls
+static char* c_conn_enum_audio_inputs(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+
+	int i;
+	cJSON *root;
+	cJSON *inputs;
+	cJSON *items;
+
+	DeviceEnumList* audio_inputs = c_server_enum_audio_inputs();
+	/*
+		Definition : -
+		typedef struct DeviceEnum {
+			int direction;
+			int index;
+			char name[50];
+			int channels;
+			char host_api[50];
+		}DeviceEnum;
+
+		typedef struct DeviceEnumList {
+			int entries;
+			DeviceEnum devices[50];
+		}DeviceEnumList;
+	*/
+
+	// Create the Json root object
+	root = cJSON_CreateObject();
+	// Add an array to hold the enumerations
+	cJSON_AddItemToObject(root, "inputs", inputs = cJSON_CreateArray());
+
+	// Iterate the list and populate the Json structure
+	for (i = 0; i<audio_inputs->entries; i++) {
+		// Create an object to add items to
+		items = cJSON_CreateObject();
+		cJSON_AddStringToObject(items, "name", audio_inputs->devices[i].name);
+		cJSON_AddStringToObject(items, "api", audio_inputs->devices[i].host_api);
+		cJSON_AddNumberToObject(items, "index", audio_inputs->devices[i].index);
+		cJSON_AddNumberToObject(items, "direction", audio_inputs->devices[i].direction);
+		cJSON_AddNumberToObject(items, "channels", audio_inputs->devices[i].channels);
+		cJSON_AddItemToArray(inputs, items);
+	}
+	return (cJSON_Print(root));
+}
+
+static char* c_conn_enum_audio_outputs(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+
+	int i;
+	cJSON *root;
+	cJSON *outputs;
+	cJSON *items;
+
+	DeviceEnumList* audio_outputs = c_server_enum_audio_outputs();
+	/*
+	Definition : -
+	typedef struct DeviceEnum {
+		int direction;
+		int index;
+		char name[50];
+		int channels;
+		char host_api[50];
+	}DeviceEnum;
+
+	typedef struct DeviceEnumList {
+		int entries;
+		DeviceEnum devices[50];
+	}DeviceEnumList;
+	*/
+
+	// Create the Json root object
+	root = cJSON_CreateObject();
+	// Add an array to hold the enumerations
+	cJSON_AddItemToObject(root, "outputs", outputs = cJSON_CreateArray());
+
+	// Iterate the list and populate the Json structure
+	for (i = 0; i < audio_outputs->entries; i++) {
+		// Create an object to add items to
+		items = cJSON_CreateObject();
+		cJSON_AddStringToObject(items, "name", audio_outputs->devices[i].name);
+		cJSON_AddStringToObject(items, "api", audio_outputs->devices[i].host_api);
+		cJSON_AddNumberToObject(items, "index", audio_outputs->devices[i].index);
+		cJSON_AddNumberToObject(items, "direction", audio_outputs->devices[i].direction);
+		cJSON_AddNumberToObject(items, "channels", audio_outputs->devices[i].channels);
+		cJSON_AddItemToArray(outputs, items);
+	}
+	return (cJSON_Print(root));
+}
+
+//==========================================================================================
+// Helper functions
+static char* encode_ack_nak(char* data) {
+	cJSON *root;
+	root = cJSON_CreateObject();
+	cJSON_AddStringToObject(root, "resp", data);
+	return cJSON_Print(root);
 }

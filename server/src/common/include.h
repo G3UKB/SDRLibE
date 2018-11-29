@@ -52,14 +52,14 @@ bob@bobcowdery.plus.com
 #include "../helpers/utils.h"
 #include "../ringbuffer/ringb.h"
 #include "../json/cJSON.h"
+// Local audio
+#include "../audio/local_audio.h"
 // Lib interface
 #include "../radio/sockets.h"
 #include "../server/server.h"
 #include "../server/dsp_man.h"
 // Pipeline processing
 #include "../pipeline/pipeline.h"
-// Local audio
-#include "../audio/local_audio.h"
 // Radio hardware interfacing and processing
 #include "radio_defs.h"
 #include "../radio/hw_control.h"
