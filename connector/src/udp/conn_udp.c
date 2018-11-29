@@ -248,6 +248,7 @@ static void udpconndata(UDPConnThreadData* td) {
 			// Problem
 			//printf("Connector: Error in select! [%d]\n", WSAGetLastError());
 			// Try to continue
+			Sleep(10.0);
 		}
 		else {
 			// We have a command packet

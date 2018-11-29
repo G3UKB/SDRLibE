@@ -215,7 +215,6 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 	*/
 	int i;
 
-	printf("%d,%s,%d,%s,%s,%s\n", direction, location, receiver, host_api, dev, channel);
 	if (direction == 0) {
 		// Mic input
 		if (strcmp(location, HPSDR) == 0) {
@@ -242,6 +241,7 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 					strcpy(pargs->audio.routing.hpsdr[i].hostapi, host_api);
 					strcpy(pargs->audio.routing.hpsdr[i].dev, dev);
 					strcpy(pargs->audio.routing.hpsdr[i].ch, channel);
+					break;
 				}
 			}
 		} else {
@@ -253,6 +253,7 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 					strcpy(pargs->audio.routing.local[i].hostapi, host_api);
 					strcpy(pargs->audio.routing.local[i].dev, dev);
 					strcpy(pargs->audio.routing.local[i].ch, channel);
+					break;
 				}
 			}
 		}
@@ -400,6 +401,7 @@ int c_radio_start(int wbs) {
 	* Arguments:
 	*	wbs	-- TRUE to start the wide band scope
 	*/
+	
 	// Can't continue unless we are configured
 	if (!c_server_running || !c_radio_discovered) {
 		printf("c.server: Server must be running and radio discovered !\n");
@@ -411,7 +413,6 @@ int c_radio_start(int wbs) {
 		printf("c.server: Radio is already running!\n");
 		return FALSE;
 	}
-
 	// Start radio hardware
 	if (do_start(sd, &srv_addr, wbs)) {
 		// Before starting the reader we need to prime the radio
@@ -422,6 +423,7 @@ int c_radio_start(int wbs) {
 		printf("c.server: Failed to start radio hardware!\n");
 		return FALSE;
 	}
+	printf("c.server: Radio running\n");
 	return TRUE;
 }
 
@@ -453,7 +455,7 @@ int c_radio_stop() {
 		return FALSE;
 	}
 	c_server_running = FALSE;
-
+	printf("c.server: Radio stopped\n");
 	return TRUE;
 }
 

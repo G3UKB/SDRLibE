@@ -25,7 +25,7 @@ server_start = {
 }
 radio_start = {
 	"cmd" : "radio_start",
-	"params" : []
+	"params" : [0]
 }
 data = bytearray(4096)
 
@@ -62,8 +62,8 @@ def script():
     set_audio()
     do_send (server_start)
     print(do_receive("server_start"))
-    #do_send (radio_start)
-    #print(do_receive("radio_start"))
+    do_send (radio_start)
+    print(do_receive("radio_start"))
     
 #======================================================================================================================
 # Main code
