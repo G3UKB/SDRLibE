@@ -215,6 +215,7 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 	*/
 	int i;
 
+	printf("%d,%s,%d,%s,%s,%s\n", direction, location, receiver, host_api, dev, channel);
 	if (direction == 0) {
 		// Mic input
 		if (strcmp(location, HPSDR) == 0) {

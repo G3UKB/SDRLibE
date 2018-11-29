@@ -95,7 +95,7 @@ stringToFunc funcCases[] =
 	{ "set_av_mode",		c_conn_set_av_mode },
 	{ "set_display_width",	c_conn_set_display_width },
 	{ "set_audio_route",	c_conn_set_audio_route },
-	{ "start",				c_conn_server_start },
+	{ "server_start",		c_conn_server_start },
 	{ "terminate",			c_conn_server_terminate },
 	{ "radio_discover",		c_conn_radio_discover },
 	{ "radio_start",		c_conn_radio_start },
@@ -253,9 +253,9 @@ static void udpconndata(UDPConnThreadData* td) {
 			// We have a command packet
 			// Read a frame size data packet
 			rd_sz = recvfrom(sd, (char*)data_in, CONN_DATA_SZ, 0, (struct sockaddr*)&conn_cli_addr, &cli_addr_sz);
-			char buffer[20];
-			inet_ntop(AF_INET, &(conn_cli_addr.sin_addr), buffer, 20);
-			printf("Connector: Client addr: %s, %d\n", buffer, conn_cli_addr.sin_port);
+			//char buffer[20];
+			//inet_ntop(AF_INET, &(conn_cli_addr.sin_addr), buffer, 20);
+			//printf("Connector: Client addr: %s, %d\n", buffer, conn_cli_addr.sin_port);
 			// Data is in Json encoding
 			// Data format is of the following form:
 			//	{
@@ -390,14 +390,13 @@ static char* c_conn_set_audio_route(cJSON *params) {
 	*/
 	char location[10];
 	char host_api[50];
-	char dev[30];
+	char dev[50];
 	char channel[10];
-
 	int direction = cJSON_GetArrayItem(params, 0)->valueint;
 	strcpy_s (location, 10, cJSON_GetArrayItem(params, 1)->valuestring);
 	int receiver = cJSON_GetArrayItem(params, 2)->valueint;
 	strcpy_s(host_api, 50, cJSON_GetArrayItem(params, 3)->valuestring);
-	strcpy_s(dev, 30, cJSON_GetArrayItem(params, 4)->valuestring);
+	strcpy_s(dev, 50, cJSON_GetArrayItem(params, 4)->valuestring);
 	strcpy_s(channel, 10, cJSON_GetArrayItem(params, 5)->valuestring);
 	c_server_set_audio_route(direction, location, receiver, host_api, dev, channel);
 	return encode_ack_nak("ACK");
