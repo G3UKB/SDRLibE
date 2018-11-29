@@ -32,7 +32,7 @@ bob@bobcowdery.plus.com
 // Local functions
 static void* udp_conn_imp(void* data);
 static void udpconndata(UDPConnThreadData* td);
-static void send_conn_resp(int sd, struct sockaddr_in conn_cli_addr, char* resp);
+static void send_conn_resp(int sd, struct sockaddr_in* conn_cli_addr, char* resp);
 static char* encode_ack_nak(char* data);
 
 // Execution functions
@@ -101,8 +101,10 @@ stringToFunc funcCases[] =
 	{ "radio_start",		c_conn_radio_start },
 	{ "radio_stop",			c_conn_radio_stop },
 	{ "wisdom",				c_conn_make_wisdom },
+	{ "enum_inputs",		c_conn_enum_audio_inputs },
+	{ "enum_outputs",		c_conn_enum_audio_outputs },
 };
-#define MAX_CASES 15
+#define MAX_CASES 22
 
 // Json structures
 cJSON *root;
@@ -251,6 +253,9 @@ static void udpconndata(UDPConnThreadData* td) {
 			// We have a command packet
 			// Read a frame size data packet
 			rd_sz = recvfrom(sd, (char*)data_in, CONN_DATA_SZ, 0, (struct sockaddr*)&conn_cli_addr, &cli_addr_sz);
+			char buffer[20];
+			inet_ntop(AF_INET, &(conn_cli_addr.sin_addr), buffer, 20);
+			printf("Connector: Client addr: %s, %d\n", buffer, conn_cli_addr.sin_port);
 			// Data is in Json encoding
 			// Data format is of the following form:
 			//	{
@@ -272,7 +277,7 @@ static void udpconndata(UDPConnThreadData* td) {
 			for (int i = 0; i < MAX_CASES ; i++) {
 				if (strcmp(funcCases[i].str, name) == 0) {
 					char* resp = (funcCases[i].f)(params);
-					send_conn_resp(sd, conn_cli_addr, resp);
+					send_conn_resp(sd, (struct sockaddr*)&conn_cli_addr, resp);
 					break;
 				}
 			}
@@ -282,9 +287,9 @@ static void udpconndata(UDPConnThreadData* td) {
 
 //==========================================================================================
 // UDP Writer
-static void send_conn_resp(int sd, struct sockaddr_in conn_cli_addr, char* resp) {
-	int cli_addr_sz = sizeof(conn_cli_addr);
-	if (sendto(sd, (const char*)resp, sizeof(*resp), 0, &conn_cli_addr, cli_addr_sz) == SOCKET_ERROR )
+static void send_conn_resp(int sd, struct sockaddr* conn_cli_addr, char* resp) {
+	int cli_addr_sz = sizeof(*conn_cli_addr);
+	if (sendto(sd, (const char*)resp, strlen(resp), 0, conn_cli_addr, &cli_addr_sz) == SOCKET_ERROR )
 		printf("Connector: Failed to write response! [%d]\n", WSAGetLastError());
 }
 
