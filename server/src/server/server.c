@@ -231,12 +231,13 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 		}
 	} else {
 		// Audio output
+		// Remember that this is a DSP channel id for the receiver which is 0 based
 		if (strcmp(location, HPSDR) == 0) {
 			// HPSDR has two channels available
 			for (i = 0; i < 2; i++) {
 				if (pargs->audio.routing.hpsdr[i].rx == -1) {
 					// Found a free slot
-					pargs->audio.routing.hpsdr[i].rx = receiver;
+					pargs->audio.routing.hpsdr[i].rx = receiver-1;
 					strcpy(pargs->audio.routing.hpsdr[i].srctype, "");
 					strcpy(pargs->audio.routing.hpsdr[i].hostapi, host_api);
 					strcpy(pargs->audio.routing.hpsdr[i].dev, dev);
@@ -248,7 +249,7 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 			for (i = 0; i < MAX_RX * 2; i++) {
 				if (pargs->audio.routing.local[i].rx == -1) {
 					// Found a free slot
-					pargs->audio.routing.local[i].rx = receiver;
+					pargs->audio.routing.local[i].rx = receiver-1;
 					strcpy(pargs->audio.routing.local[i].srctype, "");
 					strcpy(pargs->audio.routing.local[i].hostapi, host_api);
 					strcpy(pargs->audio.routing.local[i].dev, dev);

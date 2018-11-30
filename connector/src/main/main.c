@@ -42,6 +42,9 @@ int main() {
 	printf("SDRLibE Connector starting...\n");
 	printf("(Press any key to exit)\n\n\n");
 
+	// First see if we need to make the wisdom file
+	c_server_make_wisdom("..\\wisdom\\");
+
 	// Initialise Winsock 
 	WSADATA wsa;                    // Winsock
 	char last_error[128];           // Holder for last error
@@ -68,7 +71,5 @@ int main() {
 	printf("SDRLibE Connector closing...\n");
 
 	// Tidy up
-
-
 
 }
