@@ -108,7 +108,7 @@ stringToFunc funcCases[] =
 	{ "set_disp_period",	c_conn_set_disp_period },
 	{ "set_disp_status",	c_conn_set_disp_status },
 };
-#define MAX_CASES 22
+#define MAX_CASES 24
 
 // Json structures
 cJSON *root;
@@ -625,6 +625,7 @@ static char* c_conn_set_disp_status(cJSON *params) {
 		conn_disp_3_udp_start();
 	else
 		conn_disp_3_udp_stop();
+	return encode_ack_nak("ACK");
 }
 
 //==========================================================================================

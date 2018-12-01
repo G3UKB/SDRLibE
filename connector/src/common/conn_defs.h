@@ -28,10 +28,10 @@ bob@bobcowdery.plus.com
 #ifndef _conn_defs_h
 #define _conn_defs_h
 
-#define CONN_SERVER_PORT 1010
-#define CLIENT_DISPLAY_PORT_1 1011
-#define CLIENT_DISPLAY_PORT_2 1012
-#define CLIENT_DISPLAY_PORT_3 1013
+#define CONN_SERVER_PORT 10010
+#define CLIENT_DISPLAY_PORT_1 10011
+#define CLIENT_DISPLAY_PORT_2 10012
+#define CLIENT_DISPLAY_PORT_3 10013
 #define CLIENT_WBS_PORT 1014
 #define CONN_DATA_SZ 1024
 #define DISP_PERIOD 200
