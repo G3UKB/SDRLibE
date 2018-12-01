@@ -58,6 +58,8 @@ static char* c_conn_cc_out_set_tx_freq(cJSON *params);
 static char* c_conn_make_wisdom(cJSON *params);
 static char* c_conn_enum_audio_inputs(cJSON *params);
 static char* c_conn_enum_audio_outputs(cJSON *params);
+static char* c_conn_set_disp_period(cJSON *params);
+static char* c_conn_set_disp_status(cJSON *params);
 
 //==========================================================================================
 // The socket
@@ -103,6 +105,8 @@ stringToFunc funcCases[] =
 	{ "wisdom",				c_conn_make_wisdom },
 	{ "enum_inputs",		c_conn_enum_audio_inputs },
 	{ "enum_outputs",		c_conn_enum_audio_outputs },
+	{ "set_disp_period",	c_conn_set_disp_period },
+	{ "set_disp_status",	c_conn_set_disp_status },
 };
 #define MAX_CASES 22
 
@@ -587,6 +591,40 @@ static char* c_conn_enum_audio_outputs(cJSON *params) {
 		cJSON_AddItemToArray(outputs, items);
 	}
 	return (cJSON_Print(root));
+}
+
+static char* c_conn_set_disp_period(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	period
+	*/
+	conn_set_disp_period(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_disp_status(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	TRUE - disp_1
+	** 	p1		-- 	TRUE - disp_2
+	** 	p2		-- 	TRUE - disp_3
+	*/
+	int state;
+	state = cJSON_GetArrayItem(params, 0)->valueint;
+	if (state)
+		conn_disp_1_udp_start();
+	else
+		conn_disp_1_udp_stop();
+	state = cJSON_GetArrayItem(params, 1)->valueint;
+	if (state)
+		conn_disp_2_udp_start();
+	else
+		conn_disp_2_udp_stop();
+	state = cJSON_GetArrayItem(params, 2)->valueint;
+	if (state)
+		conn_disp_3_udp_start();
+	else
+		conn_disp_3_udp_stop();
 }
 
 //==========================================================================================
