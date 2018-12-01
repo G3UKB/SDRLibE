@@ -29,6 +29,12 @@ bob@bobcowdery.plus.com
 #define _conn_defs_h
 
 #define CONN_SERVER_PORT 1010
+#define CLIENT_DISPLAY_PORT_1 1011
+#define CLIENT_DISPLAY_PORT_2 1012
+#define CLIENT_DISPLAY_PORT_3 1013
+#define CLIENT_WBS_PORT 1014
 #define CONN_DATA_SZ 1024
+#define DISP_PERIOD 200
+#define MAX_DISP_WIDTH 1920
 
 #endif

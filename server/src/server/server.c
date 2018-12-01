@@ -107,13 +107,13 @@ int c_server_init() {
 		pargs->disp[i].ch_id = i;
 	}
 	// Set up general configuration to normal values
-	pargs->general.in_rate = 48000;
-	pargs->general.out_rate = 48000;
-	pargs->general.iq_blk_sz = 1024;
-	pargs->general.mic_blk_sz = 1024;
-	pargs->general.fft_size = 2048;
+	pargs->general.in_rate = IN_RATE;
+	pargs->general.out_rate = OUT_RATE;
+	pargs->general.iq_blk_sz = IQ_BLK_SZ;
+	pargs->general.mic_blk_sz = MIC_BLK_SZ;
+	pargs->general.fft_size = FFT_SZ;
 	pargs->general.window_type = RECTANGULAR;
-	pargs->general.display_width = 600;
+	pargs->general.display_width = DISPLAY_WIDTH;
 	pargs->general.av_mode = PAN_TIME_AV_LIN;
 	pargs->general.duplex = 0;
 	// Set up some default audio

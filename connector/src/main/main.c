@@ -53,12 +53,18 @@ int main() {
 		exit (-1);
 	}
 	
-	// Initialise UDP interface
+	// Initialise command UDP interface
 	if (!conn_udp_init()) {
 		printf("Connector: Failed to initialise Connector UDP interface!\n");
 		exit(-1);
 	}
 	
+	// Initialise event UDP interface
+	if (!conn_evnt_udp_init()) {
+		printf("Connector: Failed to initialise Connector Event UDP interface!\n");
+		exit(-1);
+
+	}
 	// Initialise server
 	c_server_init();
 	
