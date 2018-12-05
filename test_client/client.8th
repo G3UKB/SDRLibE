@@ -1,0 +1,141 @@
+(* 
+	client
+ 
+  Script client to SDRLibE SDR library
+ 
+ Copyright C 2018 by G3UKB Bob Cowdery
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ at your option any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+ 
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+  The author can be reached by email at:   
+     bob@bobcowdery.plus.com
+*)
+
+\ Set namespace
+ns: sdr-script
+
+\ ======================================================================================
+\ Initialisation
+\ Create UDP socket
+{ "domain" : ` net:INET4 ` , "type" : ` net:DGRAM ` , "proto" : ` net:PROTO_UDP ` } net:socket var, udp_cmd_sock
+\ Accessor
+: cmd_sock	\ -- sock
+	udp_cmd_sock @ ;
+
+\ ======================================================================================
+\ Buffers
+5000 b:new 0x0 b:fill var, b_resp_buffer
+: resp_buffer
+ b_resp_buffer @ ;
+ 
+\ ======================================================================================
+\ Messages
+: discover_msg 			\ -- msg
+	{ "cmd" : "radio_discover" , "params" : [] } >json ;
+	
+: server_start_msg 	\ -- msg
+	{ "cmd" : "server_start" , "params" : [] } >json ;
+	
+: radio_start_msg 	\ wbs -- msg
+	>r
+	{ "cmd" : "radio_start" , "params" : [] } 
+	"params" m:@ r> a:push drop >json ;
+	
+: enum_outputs_msg 	\ -- msg
+	{ "cmd" : "enum_outputs" , "params" : [] } >json ;
+	
+: default_route_msg	\ api dev -- msg
+	>r >r
+	{ "cmd" : "set_audio_route" , "params" : [1, "LOCAL", 1, "", "", "BOTH"] }
+	"params" m:@ 3 r> a:! 4 r> a:! drop >json ;
+	
+\ ======================================================================================
+\ Net
+\ ==================
+\ Address management
+: cmd_port	\ -- port
+	10010 ;
+	
+: data_1_port	\ -- port
+	10011 ;
+	
+: data_2_port	\ -- port
+	10012 ;
+	
+: data_3_port	\ -- port
+	10013 ;
+	
+: cmd_addr	\ -- cmd-addr
+	"127.0.0.1" cmd_port net:getaddrinfo ;
+	
+: data_1_addr	\ -- cmd-addr
+	"127.0.0.1" data_1_port net:getaddrinfo ;
+	
+: data_2_addr	\ -- cmd-addr
+	"127.0.0.1" data_2_port net:getaddrinfo ;
+	
+: data_3_addr	\ -- cmd-addr
+	"127.0.0.1" data_3_port net:getaddrinfo ;
+
+\ ==================
+\ Message send/receive
+
+\ Send given command
+: send_cmd_msg	\ msg -- net #sent
+	s:len >r
+	cmd_sock cmd_addr rot 0 net:sendto nip
+	r> n:= not if "Short send!" log then ;
+	
+\ Wait for response
+: wait_resp_with_timeout	\ -- resp f
+	cmd_sock true 2000 net:wait if
+		resp_buffer 0 net:recvfrom null? if "Error in read!" . cr drop false
+		else
+			drop nip nip nip json> true
+		then
+	else
+		"Timeout waiting for response!" log false
+	then ;
+	
+	\ ======================================================================================
+	\ Protocol words
+	
+	: get_default_route	\ -- api dev
+		enum_outputs_msg send_cmd_msg
+		wait_resp_with_timeout not if 
+			"Error getting audio info!" . cr 
+		else
+			"outputs" m:@ nip 1 a:@ nip
+			"api" m:@ swap "name" m:@ nip 
+		then ;
+	
+	\ ======================================================================================
+	\ Script words
+	
+	: basic_script	\ --
+		discover_msg send_cmd_msg
+		wait_resp_with_timeout not if ;; then "Discover: " . . cr
+		get_default_route default_route_msg send_cmd_msg
+		wait_resp_with_timeout not if ;; then  "Route: " . . cr
+		server_start_msg send_cmd_msg
+		wait_resp_with_timeout not if ;; then  "Server start: " . . cr
+		0 radio_start_msg send_cmd_msg
+		wait_resp_with_timeout not if ;; then  "Radio start: " . . cr ;
+		
+	\ ======================================================================================
+	\ Execution
+	
+	basic_script
+	5 sleep
+	bye
