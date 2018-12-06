@@ -41,21 +41,21 @@ ns: sdr-script
  
 \ ======================================================================================
 \ Messages
-: discover_msg 			\ -- msg
+: discover_msg 			SED: -- m
 	{ "cmd" : "radio_discover" , "params" : [] } >json ;
 	
-: server_start_msg 	\ -- msg
+: server_start_msg 	SED: -- m
 	{ "cmd" : "server_start" , "params" : [] } >json ;
 	
-: radio_start_msg 	\ wbs -- msg
+: radio_start_msg 	SED: n -- m
 	>r
 	{ "cmd" : "radio_start" , "params" : [] } 
 	"params" m:@ r> a:push drop >json ;
 	
-: enum_outputs_msg 	\ -- msg
+: enum_outputs_msg 	SED: -- m
 	{ "cmd" : "enum_outputs" , "params" : [] } >json ;
 	
-: default_route_msg	\ api dev -- msg
+: default_route_msg	SED: s s -- m
 	>r >r
 	{ "cmd" : "set_audio_route" , "params" : [1, "LOCAL", 1, "", "", "BOTH"] }
 	"params" m:@ 3 r> a:! 4 r> a:! drop >json ;
@@ -96,14 +96,22 @@ ns: sdr-script
 	s:len >r
 	cmd_sock cmd_addr rot 0 net:sendto nip
 	r> n:= not if "Short send!" log then ;
-	
+
+\ Net wait
+: net_wait	\ -- f
+	cmd_sock true 2000 net:wait ;
+
+: recv_from	\ -- f
+	resp_buffer 0 net:recvfrom null? if 
+		"Error in read!" log drop false
+	else
+		drop nip nip nip json> true 
+	then ;
+		
 \ Wait for response
 : wait_resp_with_timeout	\ -- resp f
-	cmd_sock true 2000 net:wait if
-		resp_buffer 0 net:recvfrom null? if "Error in read!" . cr drop false
-		else
-			drop nip nip nip json> true
-		then
+	net_wait if
+		recv_from
 	else
 		"Timeout waiting for response!" log false
 	then ;
