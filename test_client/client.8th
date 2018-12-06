@@ -101,10 +101,10 @@ ns: sdr-script
 	r> n:= not if "Short send!" log then ;
 
 \ Net wait
-: net_wait	SED:  -- G
+: net_wait	SED:  -- net T
 	cmd_sock true 2000 net:wait ;
 
-: recv_from	SED:  -- G
+: recv_from	SED:  -- T
 	resp_buffer 0 net:recvfrom null? if 
 		"Error in read!" log drop false
 	else
@@ -112,7 +112,7 @@ ns: sdr-script
 	then ;
 		
 \ Wait for response
-: wait_resp_with_timeout	SED:  -- b G
+: wait_resp_with_timeout	SED:  -- m T
 	net_wait if
 		recv_from
 	else
