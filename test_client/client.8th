@@ -22,6 +22,9 @@
      bob@bobcowdery.plus.com
 *)
 
+needs debug/sed
+true SED-CHECK
+
 \ Set namespace
 ns: sdr-script
 
@@ -36,26 +39,26 @@ ns: sdr-script
 \ ======================================================================================
 \ Buffers
 5000 b:new 0x0 b:fill var, b_resp_buffer
-: resp_buffer
+: resp_buffer	SED: -- b
  b_resp_buffer @ ;
  
 \ ======================================================================================
 \ Messages
-: discover_msg 			SED: -- m
+: discover_msg 			SED: -- s
 	{ "cmd" : "radio_discover" , "params" : [] } >json ;
 	
-: server_start_msg 	SED: -- m
+: server_start_msg 	SED: -- s
 	{ "cmd" : "server_start" , "params" : [] } >json ;
 	
-: radio_start_msg 	SED: n -- m
+: radio_start_msg 	SED: n -- s
 	>r
 	{ "cmd" : "radio_start" , "params" : [] } 
 	"params" m:@ r> a:push drop >json ;
 	
-: enum_outputs_msg 	SED: -- m
+: enum_outputs_msg 	SED: -- s
 	{ "cmd" : "enum_outputs" , "params" : [] } >json ;
 	
-: default_route_msg	SED: s s -- m
+: default_route_msg	SED: s s -- s
 	>r >r
 	{ "cmd" : "set_audio_route" , "params" : [1, "LOCAL", 1, "", "", "BOTH"] }
 	"params" m:@ 3 r> a:! 4 r> a:! drop >json ;
@@ -64,44 +67,44 @@ ns: sdr-script
 \ Net
 \ ==================
 \ Address management
-: cmd_port	\ -- port
+: cmd_port	SED: -- n
 	10010 ;
 	
-: data_1_port	\ -- port
+: data_1_port	SED: -- n
 	10011 ;
 	
-: data_2_port	\ -- port
+: data_2_port	SED: -- n
 	10012 ;
 	
-: data_3_port	\ -- port
+: data_3_port	SED: -- n
 	10013 ;
 	
-: cmd_addr	\ -- cmd-addr
+: cmd_addr		SED: -- X
 	"127.0.0.1" cmd_port net:getaddrinfo ;
 	
-: data_1_addr	\ -- cmd-addr
+: data_1_addr	SED: -- X
 	"127.0.0.1" data_1_port net:getaddrinfo ;
 	
-: data_2_addr	\ -- cmd-addr
+: data_2_addr	SED: -- X
 	"127.0.0.1" data_2_port net:getaddrinfo ;
 	
-: data_3_addr	\ -- cmd-addr
+: data_3_addr	SED: -- X
 	"127.0.0.1" data_3_port net:getaddrinfo ;
 
 \ ==================
 \ Message send/receive
 
 \ Send given command
-: send_cmd_msg	\ msg -- net #sent
+: send_cmd_msg	SED: s -- 
 	s:len >r
 	cmd_sock cmd_addr rot 0 net:sendto nip
 	r> n:= not if "Short send!" log then ;
 
 \ Net wait
-: net_wait	\ -- f
+: net_wait	SED:  -- G
 	cmd_sock true 2000 net:wait ;
 
-: recv_from	\ -- f
+: recv_from	SED:  -- G
 	resp_buffer 0 net:recvfrom null? if 
 		"Error in read!" log drop false
 	else
@@ -109,7 +112,7 @@ ns: sdr-script
 	then ;
 		
 \ Wait for response
-: wait_resp_with_timeout	\ -- resp f
+: wait_resp_with_timeout	SED:  -- b G
 	net_wait if
 		recv_from
 	else
@@ -119,7 +122,7 @@ ns: sdr-script
 	\ ======================================================================================
 	\ Protocol words
 	
-	: get_default_route	\ -- api dev
+	: get_default_route	SED:  -- s s
 		enum_outputs_msg send_cmd_msg
 		wait_resp_with_timeout not if 
 			"Error getting audio info!" . cr 
@@ -131,7 +134,7 @@ ns: sdr-script
 	\ ======================================================================================
 	\ Script words
 	
-	: basic_script	\ --
+	: basic_script	SED:  --
 		discover_msg send_cmd_msg
 		wait_resp_with_timeout not if ;; then "Discover: " . . cr
 		get_default_route default_route_msg send_cmd_msg
