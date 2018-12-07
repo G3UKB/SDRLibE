@@ -22,8 +22,38 @@
      bob@bobcowdery.plus.com
 *)
 
+\ =========================================
+\ Testing only
 needs debug/sed
 true SED-CHECK
+false log-async
+
+(*
+\ Test cases simulation words start
+\ Overwrite words that are needed for simulation testing 
+
+: net:sendto	\ net ai buf flags -- net #sent
+	drop s:len nip nip ;	\ Good case
+	\ drop 10 nip nip ;		\ Bad case
+	
+: net:wait	\ net read? msecs -- net f
+	2drop true ;								\ Read ready
+	\ 1000 / sleep drop false ;	\ Timeout
+
+: ack_resp \ -- ack
+	{"resp":"ACK"} ;
+	
+: audio_resp \ -- audio-resp
+	{"outputs": [{},{"api":"someapi" , "name":"somedev"}] } ;
+	
+: net:recvfrom \ net buf flags -- net addr port buf #recv | net null
+	\ 2drop "127.0.0.1" 10010 ack_resp >json s:len ; 	\ Good case
+	2drop "127.0.0.1" 10010 audio_resp >json s:len ; 	\ Good case
+	\ 2drop null ;																		\ Bad case
+	
+\ Testing end
+\ =========================================
+*)
 
 \ Set namespace
 ns: sdr-script
@@ -33,32 +63,54 @@ ns: sdr-script
 \ Create UDP socket
 { "domain" : ` net:INET4 ` , "type" : ` net:DGRAM ` , "proto" : ` net:PROTO_UDP ` } net:socket var, udp_cmd_sock
 \ Accessor
-: cmd_sock	\ -- sock
+\ Return the command socket
+: cmd_sock	SED: -- net
+	\ in: 	none
+	\ out:	s0 - command socket
 	udp_cmd_sock @ ;
 
 \ ======================================================================================
 \ Buffers
 5000 b:new 0x0 b:fill var, b_resp_buffer
+\ Return the response bubber
 : resp_buffer	SED: -- b
- b_resp_buffer @ ;
+	\ in: 	none
+	\ out:	s0 - response buffer
+	b_resp_buffer @ ;
  
 \ ======================================================================================
 \ Messages
+\ Return the discover message
 : discover_msg 			SED: -- s
+	\ in: 	none
+	\ out:	s0 - json encoded discover message
 	{ "cmd" : "radio_discover" , "params" : [] } >json ;
-	
+
+\ Return the server start message
 : server_start_msg 	SED: -- s
+	\ in: 	none
+	\ out:	s0 - json encoded server start message
 	{ "cmd" : "server_start" , "params" : [] } >json ;
-	
+
+\ Return the 	radio start message
 : radio_start_msg 	SED: n -- s
+	\ in: 	s0 - 0 = start without WBS else start with WBS
+	\ out:	s0 - json encoded radio start message
 	>r
 	{ "cmd" : "radio_start" , "params" : [] } 
 	"params" m:@ r> a:push drop >json ;
-	
+
+\ Return the enum audio outputs message
 : enum_outputs_msg 	SED: -- s
+	\ in: 	none
+	\ out:	s0 - json encoded enum audo outputs message
 	{ "cmd" : "enum_outputs" , "params" : [] } >json ;
 	
+\ Return the default route message i.e. receiver1 -> speaker audio
 : default_route_msg	SED: s s -- s
+	\ in:		s0 - audio api i.e. "MME"
+	\				s1 - audio device name string
+	\ out:	s0 - json encoded default route message
 	>r >r
 	{ "cmd" : "set_audio_route" , "params" : [1, "LOCAL", 1, "", "", "BOTH"] }
 	"params" m:@ 3 r> a:! 4 r> a:! drop >json ;
@@ -67,74 +119,147 @@ ns: sdr-script
 \ Net
 \ ==================
 \ Address management
+\ Return the command port
 : cmd_port	SED: -- n
+	\ in: 	none
+	\ out:	s0 - cmd port
 	10010 ;
-	
+
+\ Return the display data receiver 1 port	
 : data_1_port	SED: -- n
+	\ in: 	none
+	\ out:	s0 - display data receiver 1 port
 	10011 ;
-	
+
+\ Return the display data receiver 2 port
 : data_2_port	SED: -- n
+	\ in: 	none
+	\ out:	s0 - display data receiver 2 port
 	10012 ;
-	
+
+\ Return the display data receiver 3 port
 : data_3_port	SED: -- n
+	\ in: 	none
+	\ out:	s0 - display data receiver 3 port
 	10013 ;
-	
+
+\ Return the command address info
 : cmd_addr		SED: -- X
+	\ in: 	none
+	\ out:	s0 - cmd address info
 	"127.0.0.1" cmd_port net:getaddrinfo ;
-	
+
+\ Return the display data receiver 1 address info	
 : data_1_addr	SED: -- X
+	\ in: 	none
+	\ out:	s0 - Data 1 address info
 	"127.0.0.1" data_1_port net:getaddrinfo ;
-	
+
+\ Return the display data receiver 2 address info		
 : data_2_addr	SED: -- X
+	\ in: 	none
+	\ out:	s0 - Data 2 address info
 	"127.0.0.1" data_2_port net:getaddrinfo ;
-	
+
+\ Return the display data receiver 3 address info	
 : data_3_addr	SED: -- X
+	\ in: 	none
+	\ out:	s0 - Data 3 address info
 	"127.0.0.1" data_3_port net:getaddrinfo ;
 
 \ ==================
 \ Message send/receive
 
 \ Send given command
-: send_cmd_msg	SED: s -- 
+: send_cmd_msg	SED: s --
+	\ in: 	so - json encoded message string
+	\ out:	s0 - none
 	s:len >r
 	cmd_sock cmd_addr rot 0 net:sendto nip
 	r> n:= not if "Short send!" log then ;
 
-\ Net wait
-: net_wait	SED:  -- net T
+\ Wait for read data available from cmd socket
+: net_wait_recv_cmd	SED:  -- net T
+	\ in: 	none
+	\ out:	s0 - true if wait successful
+	\				s1 - the target socket
 	cmd_sock true 2000 net:wait ;
 
-: recv_from	SED:  -- T
+\ Receive data from the given socket
+: recv_from	SED:  net -- m T
+	\ in: 	s0 - socket
+	\ out:	s0 - true if receive successful
+	\ pre: 	read data ready condition true
 	resp_buffer 0 net:recvfrom null? if 
-		"Error in read!" log drop false
+		"Error in read!" log 2drop {} false
 	else
-		drop nip nip nip json> true 
+		drop nip nip nip json> true
 	then ;
 		
-\ Wait for response
+\ Wait for and read cmd response
 : wait_resp_with_timeout	SED:  -- m T
-	net_wait if
+	\ in: 	none
+	\ out:	s0 - true if response received
+	\				s1 - the response structure (map in this case)
+	net_wait_recv_cmd if
 		recv_from
 	else
-		"Timeout waiting for response!" log false
+		"Timeout waiting for response!" log 2drop [] false
 	then ;
 	
 	\ ======================================================================================
 	\ Protocol words
 	
+	\ Return the default route audio parameters
 	: get_default_route	SED:  -- s s
+		\ in: 	none
+		\ out:	s0 - the audio api
+		\				s1 - the audio device
 		enum_outputs_msg send_cmd_msg
 		wait_resp_with_timeout not if 
-			"Error getting audio info!" . cr 
+			"Error getting audio info!" log
 		else
 			"outputs" m:@ nip 1 a:@ nip
 			"api" m:@ swap "name" m:@ nip 
 		then ;
 	
 	\ ======================================================================================
-	\ Script words
+	\ Testing
+	\ ======================================================================================
+
+	\ The test cases exercise each word on all paths and use the SED checker to establish
+	\ correct stack behaviour. Some words may use words that require external calls and possibly
+	\ expect external data. These are simulated by an overwrite of those words and the simulated
+	\ word then behaves as closely as possible to the actual word. These words are at the beginning
+	\ of the module as they need to be compiled first.
+		
+	: test_cases
+		\ Basic words with no dependencies
+		resp_buffer "Buffer: " . b:len . drop cr
+		discover_msg "Discover: " . . cr
+		server_start_msg "Server start: " . . cr
+		0 radio_start_msg "Radio start: " . . cr
+		enum_outputs_msg "Enum outputs: " . . cr
+		"some api" "some_dev" default_route_msg "Default route: " . . cr
+		get_default_route "Get default route: " . cr
+		cmd_port "Cmd port: " . . cr
+		data_1_port "Data_1_port port: " . . cr
+		data_2_port "Data_2_port port: " . . cr
+		data_3_port "Data_3_port port: " . . cr
+		cmd_addr "Cmd addr: " . . cr
+		data_1_addr "Data_1_addr addr: " . . cr
+		data_2_addr "Data_2_addr addr: " . . cr
+		data_3_addr "Data_3_addr addr: " . . cr
+		\ Words with dependencies
+		discover_msg send_cmd_msg "Send discover message" . cr
+		net_wait_recv_cmd "Wait for read data: " . . cr drop
+		cmd_sock recv_from "Read: " . . " Data: " . . cr
+		wait_resp_with_timeout "Response: " . . " Data: " . . cr ;
 	
-	: basic_script	SED:  --
+	\ Runs a basic script to start radio with one receiver on the dafault audio route
+	: basic_script	SED: --
+		\ in: 	none
+		\ out:	none
 		discover_msg send_cmd_msg
 		wait_resp_with_timeout not if ;; then "Discover: " . . cr
 		get_default_route default_route_msg send_cmd_msg
@@ -144,9 +269,15 @@ ns: sdr-script
 		0 radio_start_msg send_cmd_msg
 		wait_resp_with_timeout not if ;; then  "Radio start: " . . cr ;
 		
-	\ ======================================================================================
-	\ Execution
+	\ Run with the simulation words uncommented.
+	\ cr cr "Running test cases..." . cr cr
+	\ test_cases
+	\ "Done test cases" . cr
 	
+	\ Run with the simulation words commented out.
+	"Running basic script..." . cr
 	basic_script
-	5 sleep
+	"Done.. the server will continue to run without the client." . cr
+	
 	bye
+	
