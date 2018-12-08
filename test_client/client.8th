@@ -24,11 +24,11 @@
 
 \ =========================================
 \ Testing only
+
 needs debug/sed
 true SED-CHECK
 false log-async
 
-(*
 \ Test cases simulation words start
 \ Overwrite words that are needed for simulation testing 
 
@@ -53,7 +53,20 @@ false log-async
 	
 \ Testing end
 \ =========================================
-*)
+
+\ =========================================
+\ Parameter stack per task
+\ Temp one task words
+\ Make 5 stacks per task so the words switch to the correct stack
+10 st:new var, pstack 
+: >p
+	pstack @ swap st:push drop ;
+	
+: p>
+	pstack @ st:pop nip ;
+	
+\ End temp
+\ =========================================
 
 \ Set namespace
 ns: sdr-script
@@ -111,9 +124,9 @@ ns: sdr-script
 	\ in:		s0 - audio api i.e. "MME"
 	\				s1 - audio device name string
 	\ out:	s0 - json encoded default route message
-	>r >r
+	>p >p
 	{ "cmd" : "set_audio_route" , "params" : [1, "LOCAL", 1, "", "", "BOTH"] }
-	"params" m:@ 3 r> a:! 4 r> a:! drop >json ;
+	"params" m:@ 3 p> a:! 4 p> a:! drop >json ;
 	
 \ ======================================================================================
 \ Net
@@ -204,23 +217,32 @@ ns: sdr-script
 	net_wait_recv_cmd if
 		recv_from
 	else
-		"Timeout waiting for response!" log 2drop [] false
+		"Timeout waiting for response!" log drop {} false
 	then ;
 	
 	\ ======================================================================================
 	\ Protocol words
-	
+	\ Return the audio info for all output devices
+	: get_audio_output_info	SED: -- m T
+		\ in: 	none
+		\ out:	s0 - true if successful
+		\ out:	s1 - the audio info map
+		enum_outputs_msg send_cmd_msg
+		wait_resp_with_timeout ;
+		
 	\ Return the default route audio parameters
 	: get_default_route	SED:  -- s s
 		\ in: 	none
 		\ out:	s0 - the audio api
 		\				s1 - the audio device
-		enum_outputs_msg send_cmd_msg
-		wait_resp_with_timeout not if 
-			"Error getting audio info!" log
-		else
+		get_audio_output_info if
+			\ Return api and dev for the default device
+			\ Note, we should select for this aka gui interface
 			"outputs" m:@ nip 1 a:@ nip
 			"api" m:@ swap "name" m:@ nip 
+		else
+			\ Something went wrong
+			"Error getting audio info!" log drop "" ""
 		then ;
 	
 	\ ======================================================================================
@@ -270,14 +292,14 @@ ns: sdr-script
 		wait_resp_with_timeout not if ;; then  "Radio start: " . . cr ;
 		
 	\ Run with the simulation words uncommented.
-	\ cr cr "Running test cases..." . cr cr
-	\ test_cases
-	\ "Done test cases" . cr
+	cr cr "Running test cases..." . cr cr
+	test_cases
+	"Done test cases" . cr
 	
 	\ Run with the simulation words commented out.
-	"Running basic script..." . cr
-	basic_script
-	"Done.. the server will continue to run without the client." . cr
+	\ "Running basic script..." . cr
+	\ basic_script
+	\ "Done.. the server will continue to run without the client." . cr
 	
 	bye
 	
