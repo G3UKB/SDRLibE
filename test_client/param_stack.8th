@@ -1,0 +1,143 @@
+(* 
+	param_stack.8th
+ 
+  Parameter storage
+ 
+ Copyright C 2018 by G3UKB Bob Cowdery
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ at your option any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+ 
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+  The author can be reached by email at:   
+     bob@bobcowdery.plus.com
+*)
+
+\ =========================================
+\ Testing only
+
+needs debug/sed
+true SED-CHECK
+false log-async
+
+\ ========================================
+\ Leave as default namespace for ease of use
+
+\ Param stack array
+{} var, ps_st
+\ Max params per stack (depth)
+: PS_MAX_PARAMS 20 ;
+
+\ ========================================
+\ Helpers
+\ Return the stack associated with the calling task
+: ps@	SED: -- * T
+	\ in: 	none
+	\ out:	s0 - true if successful
+	\				s1 - stack | null 
+	ps_st @ t:name@ m:exists? if
+		\ Existsing entry for task
+		t:name@ m:@ nip true
+	else
+		\ No entry for task
+		drop null false
+	then ;
+
+\ Store the given stack for the current task
+: ps!	SED: st --
+	\ in: 	stack
+	\ out:	none
+	\ pre: 	entry must exist
+	ps_st @ t:name@ rot m:! drop ;
+
+\ Check if initialised for current task
+\ Throw exception if not initialised
+: ps_check SED: --
+	\ in: 	none
+	\ out:	none
+	ps@ not if
+		"Access attemt before the parameter stack has been initialised for task [" t:name@ s:+ "]!" s:+ nip throw
+	then drop ;
+	
+\ ========================================
+\ Allocate a parameter stack for the given task
+: ps_alloc	SED: --
+	\ in: 	none
+	\ out:	none
+	ps@ not if
+		\ No previous allocation for this task
+		\ Create a new entry
+		drop PS_MAX_PARAMS st:new ps!
+	else
+		drop "Param stack already initialised for task [" t:name@ s:+ "]. Ignoring!" s:+ . cr
+	then ;
+
+\ ========================================
+\ Parameter store/retrieve	
+: >p	\ --
+	ps_check
+	ps! drop ;
+
+: p>
+	ps_check
+	st:pop nip ;
+
+: p@
+	ps_check
+	0 st:pick nip ;
+
+: pp	\ n -- x
+	ps_check
+	st:pick nip ;
+	
+\ ========================================
+\ Testing
+
+\ ======================================================================================
+	\ Testing
+	\ ======================================================================================
+
+	\ The test cases exercise each word on all paths and use the SED checker to establish
+	\ correct stack behaviour. Some words may use words that require external calls and possibly
+	\ expect external data. These are simulated by an overwrite of those words and the simulated
+	\ word then behaves as closely as possible to the actual word. These words are at the beginning
+	\ of the module as they need to be compiled first.
+	
+	: t1
+		"Task t1 running" . cr
+		"T1" t:name!
+		ps_alloc
+		ps@ "Param stack resp: " . . ", stack: " . . cr
+		"Current: " . ps_st @ . cr
+		ps_alloc
+	;
+		
+	: test_cases
+		"Main" t:name!
+		ps@ "Param stack resp: " . . ", stack: " . . cr
+		\ ps_st @ t:name@ 1 st:new m:! drop
+		10 st:new ps!
+		ps@ "Param stack resp: " . . ", stack: " . . cr
+		ps_check
+		\ "Main1" t:name!
+		\ ps_check
+		\ "Main" t:name!
+		"Current: " . ps_st @ . cr
+		' t1 t:task
+	;
+	
+	cr cr "Running test cases..." . cr cr
+	test_cases
+	5 sleep
+	"Done test cases" . cr
+	
+	bye
