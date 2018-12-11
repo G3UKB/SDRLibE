@@ -27,7 +27,7 @@
 
 needs debug/sed
 true SED-CHECK
-false log-async
+\ false log-async
 
 \ ========================================
 
@@ -36,10 +36,10 @@ false log-async
 \ Max params per stack (depth)
 : PS_MAX_PARAMS 20 ;
 
-: ps_lock
-	ps_st lock drop ;
+: ps_lock@	\ SED: -- m
+	ps_st lock @ ;
 
-: ps_unlock
+: ps_unlock \ SED: --
 	ps_st unlock drop ;	
 	
 \ ===============================================================================
@@ -47,50 +47,51 @@ false log-async
 \ ===============================================================================
 
 \ Return the stack associated with the calling task
-: pss@	SED: -- * T
+: pss@	 SED: -- * T
 	\ in: 	none
 	\ out:	s0 - true if successful
 	\				s1 - stack | null 
-	ps_st @ t:name@ m:exists? if
+	ps_lock@ t:name@ m:exists? if
 		\ Existsing entry for task
 		t:name@ m:@ nip true
 	else
 		\ No entry for task
 		drop null false
-	then ;
+	then 
+	ps_unlock ;
 
 \ Store the given stack for the current task
-: pss!	SED: st --
+: pss!	 SED: st --
 	\ in: 	stack
 	\ out:	none
 	\ pre: 	entry must exist
-	ps_st @ t:name@ rot m:! drop ;
+	ps_lock@ t:name@ rot m:! drop ps_unlock ;
 
 \ Pop TOS from the task param stack
-: ps>	SED: -- *
+: ps>	 SED: -- *
 	\ in: 	none
 	\ out:	item of any type
-	ps_st @ t:name@ m:@ nip st:pop nip ;
+	ps_lock@ t:name@ m:@ nip st:pop nip ps_unlock ;
 
-: ps@	SED: -- *
+: ps@	 SED: -- *
 	\ in: 	none
 	\ out:	item of any type
-	ps_st @ t:name@ m:@ nip 0 st:pick nip ;
+	ps_lock@ t:name@ m:@ nip 0 st:pick nip ps_unlock ;
 	
-: pps@	SED: n -- *
+: pps@	 SED: n -- *
 	\ in: 	item index
 	\ out:	item of any type
-	ps_st @ t:name@ m:@ nip swap .s st:pick nip ;
+	ps_lock@ t:name@ m:@ nip swap st:pick nip ps_unlock ;
 
 \ Push the given item to the task param stack
-: ps!	SED: * --
+: ps!	 SED: * --
 	\ in: 	item of any type
 	\ out:	none
-	ps_st @ t:name@ m:@ nip swap st:push drop ;
+	ps_lock@ t:name@ m:@ nip swap st:push drop ps_unlock ;
 	
 \ Check if initialised for current task
 \ Throw exception if not initialised
-: ps_check SED: --
+: ps_check  SED: --
 	\ in: 	none
 	\ out:	none
 	pss@ not if
@@ -103,163 +104,80 @@ false log-async
 
 \ Allocate a parameter stack for the given task
 \ Must be called by each task first AFTER it has set a unique task name
-: ps_alloc	SED: --
+: ps_alloc	 SED: --
 	\ in: 	none
 	\ out:	none
-	ps_lock
 	pss@ not if
 		\ No previous allocation for this task
 		\ Create a new entry
 		drop PS_MAX_PARAMS st:new pss!
 	else
 		drop "Param stack already initialised for task [" t:name@ s:+ "]. Ignoring!" s:+ . cr
-	then 
-	ps_unlock ;
+	then ;
 
 \ ========================================
 \ Parameter stack operations
 
 \ Store TOS to task param stack
-: >p	SED: * --
+: >p	 SED: * --
 	\ in: 	any type
 	\ out:	none
-	.s ps_lock
 	ps_check
-	ps! drop
-	ps_unlock .s ;
+	ps! ;
 
 \ Retrieve TOS from task param stack
-: p> SED: -- *
+: p>  SED: -- *
 	\ in: 	none
 	\ out:	any type
-	ps_lock
 	ps_check
-	ps>
-	ps_unlock ;
+	ps> ;
 
 \ Copy TOS from task param stack
-: p@	SED: -- *
+: p@	 SED: -- *
 	\ in: 	none
 	\ out:	any type
-	ps_lock
 	ps_check
-	ps@ 
-	ps_unlock ;
+	ps@ ;
 
 \ Copy item n from task param stack
-: pp@	SED: n -- *
+: pp@ SED: n -- *
 	\ in: 	none
 	\ out:	any type
-	ps_lock
 	ps_check
-	pps@ 
-	ps_unlock ;
+	pps@ ;
 	
+\ Clear task param stack
+
+
 \ ========================================
 \ Testing
 
-\ ======================================================================================
-	\ Testing
-	\ ======================================================================================
+\ Usage test
+: tn
+	t:name!
+	ps_alloc
+	1 2 3 4 5 >p >p >p >p >p
+	p> p> p> p> p>
+	1 2 3 4 5 >p >p >p >p >p
+	p@ p@ p@ p@ p@
+	1 2 3 4 5 >p >p >p >p >p
+	0 pp@ 1 pp@ 2 pp@ 3 pp@ 4 pp@ 5 pp@
+	p> p> p> p> p> p> p> p> p> p>
+;
 
-	\ The test cases exercise each word on all paths and use the SED checker to establish
-	\ correct stack behaviour. Some words may use words that require external calls and possibly
-	\ expect external data. These are simulated by an overwrite of those words and the simulated
-	\ word then behaves as closely as possible to the actual word. These words are at the beginning
-	\ of the module as they need to be compiled first.
+: run_task	\ n -- t
+	"Task-" swap >s s:+ 1 ' tn t:task-n
+	1 sleep 
+;
 	
-	\ Individual word tests from bottom of hierarchy up
-	\ Test task t1
-	(*
-	: t1
-		"Task t1 running" . cr
-		"T1" t:name!
-		ps_alloc
-		pss@ "Param stack resp: " . . ", stack: " . . cr
-		"Current: " . ps_st @ . cr
-		ps_alloc
-		"Item-t1-1" ps!
-		"Current: " . ps_st @ . cr
-	;
-	\ Test task t2	
-	: t2
-			"Task t2 running" . cr
-			"T2" t:name!
-			ps_alloc
-			pss@ "Param stack resp: " . . ", stack: " . . cr
-			"Current: " . ps_st @ . cr
-			ps_alloc
-			"Item-t2-1" ps!
-			"Current: " . ps_st @ . cr
-	;
-	\ Word test cases
-	: test_cases
-		"Main" t:name!
-		pss@ "Param stack resp: " . . ", stack: " . . cr
-		\ ps_st @ t:name@ 1 st:new m:! drop
-		10 st:new pss!
-		pss@ "Param stack resp: " . . ", stack: " . . cr
-		ps_check
-		"Item-main-1" ps! "Stored: Item-main-1" . cr
-		\ "Main1" t:name!
-		\ ps_check
-		\ "Main" t:name!
-		"Current: " . ps_st @ . cr
-		p> "Item [Main]: " . . cr "Popped: Item-main-1" . cr
-		"Current: " . ps_st @ . cr
-		"Item-main-1" ps!
-		p@ "Item [Main[: " . . cr "Copied: Item-main-1" . cr
-		"Current: " . ps_st @ . cr
-		"Item-main-2" ps!
-		1 pp@ "Item [Main]: " . . cr "Picked: Item-main-2" . cr
-		"Current: " . ps_st @ . cr
-		1 sleep
-		' t1 t:task
-		1 sleep
-		' t2 t:task
-	;
-	*)
-	
-	\ Usage test
-	: t3
-		"Task-3" t:name!
-		ps_alloc
-		0 >p
-		\ 0 1 2 3 4 5 >p >p >p >p >p
-		p> . \ p> . p> . p> . p> .
-	;
-	
-	: t4
-			"Task-4" t:name!
-			ps_alloc
-			6 7 8 9 10 p> p> p> p> p>
-			p> . p> . p> . p> . p> .
-	;
-	
-	: t5
-			"Task-5" t:name!
-			ps_alloc
-			11 12 13 14 15 p> p> p> p> p>
-			p> . p> . p> . p> . p> .
-	;
-	
-	: usage_test
-		' t3 t:task
-		\ 1 sleep
-		\ ' t4 t:task
-		\ 1 sleep
-		\ ' t5 t:task
-		\ 1 sleep
-	;
-	
-	\ cr cr "Running test cases..." . cr cr
-	\ test_cases
-	\ 2 sleep
-	\ "Done test cases" . cr
-	
-	cr cr "Running usage test..." . cr cr
-	usage_test
-	2 sleep
-	"Done usage test" . cr
-	
-	bye
+: usage_test
+	' run_task 1 10 loop
+	5 sleep
+	"Current: " . ps_st @ . cr
+;
+
+cr cr "Running usage test..." . cr cr
+usage_test
+"Done usage test" . cr
+
+bye

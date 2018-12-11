@@ -20,7 +20,7 @@
 %%     bob@bobcowdery.plus.com
 %%
 
--module(sdrlibe_app).
+-module(sdr_app).
 -export([start/0]).
 
 %%----------------------------------------------------------------------

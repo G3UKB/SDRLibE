@@ -21,10 +21,10 @@
 %%
 
 -module(sdr_if).
--export([start/0]).
+-export([start/0, get_resp/1]).
 
 %% Constants
--define(CMD_PORT, 10011).
+-define(CMD_PORT, 10010).
 
 %%----------------------------------------------------------------------
 %% Function: start
@@ -35,8 +35,31 @@
 %%----------------------------------------------------------------------
 start() ->
 	% Start the sdr interface
-	gen_udp:open(CMD_PORT) of 
-		{ok, socket} ->
-			io:format("OK~n"),
-		{error, reason} ->
-			io:format("Fail~n").
+	{ok, Socket} = gen_udp:open(0, [binary]),	
+	Msg = msg(enum_outputs),
+	gen_udp:send(Socket, "localhost", ?CMD_PORT, Msg),
+	Resp = get_resp(Socket),
+	Dec = jsone:decode(Resp),
+	io:format(Dec),
+	io:format(Resp).
+
+get_resp(Socket) ->
+	receive
+		{udp, Socket,_,_,Bin} ->
+			Bin
+	after 2000 ->
+		error
+	end.
+
+%%----------------------------------------------------------------------
+%% Function: message
+%% Purpose: Return the selected message
+%% Args:  
+%% Returns:	message
+%%	or 		{error, Reason}
+%%----------------------------------------------------------------------
+msg(discover) -> jsone:encode(#{<<"cmd">> => <<"discover">>, <<"params">> => []});
+msg(enum_outputs) -> jsone:encode(#{<<"cmd">> => <<"enum_outputs">>, <<"params">> => []});
+msg(set_audio_route) -> jsone:encode(#{<<"cmd">> => <<"set_audio_route">>, <<"params">> => []});
+msg(server_start) -> jsone:encode(#{<<"cmd">> => <<"server_start">>, <<"params">> => []});
+msg(radio_start) -> jsone:encode(#{<<"cmd">> => <<"radio_start">>, <<"params">> => [0]}).
