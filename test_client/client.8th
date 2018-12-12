@@ -24,14 +24,15 @@
 
 \ =========================================
 \ Testing only
+"param_stack.8th"  f:include
 
 needs debug/sed
-true SED-CHECK
-false log-async
+\ true SED-CHECK
+\ false log-async
 
 \ Test cases simulation words start
 \ Overwrite words that are needed for simulation testing 
-
+(*
 : net:sendto	\ net ai buf flags -- net #sent
 	drop s:len nip nip ;	\ Good case
 	\ drop 10 nip nip ;		\ Bad case
@@ -50,22 +51,8 @@ false log-async
 	\ 2drop "127.0.0.1" 10010 ack_resp >json s:len ; 	\ Good case
 	2drop "127.0.0.1" 10010 audio_resp >json s:len ; 	\ Good case
 	\ 2drop null ;																		\ Bad case
-	
+*)	
 \ Testing end
-\ =========================================
-
-\ =========================================
-\ Parameter stack per task
-\ Temp one task words
-\ Make 5 stacks per task so the words switch to the correct stack
-10 st:new var, pstack 
-: >p
-	pstack @ swap st:push drop ;
-	
-: p>
-	pstack @ st:pop nip ;
-	
-\ End temp
 \ =========================================
 
 \ Set namespace
@@ -254,7 +241,7 @@ ns: sdr-script
 	\ expect external data. These are simulated by an overwrite of those words and the simulated
 	\ word then behaves as closely as possible to the actual word. These words are at the beginning
 	\ of the module as they need to be compiled first.
-		
+	(*	
 	: test_cases
 		\ Basic words with no dependencies
 		resp_buffer "Buffer: " . b:len . drop cr
@@ -277,11 +264,13 @@ ns: sdr-script
 		net_wait_recv_cmd "Wait for read data: " . . cr drop
 		cmd_sock recv_from "Read: " . . " Data: " . . cr
 		wait_resp_with_timeout "Response: " . . " Data: " . . cr ;
+	*)
 	
 	\ Runs a basic script to start radio with one receiver on the dafault audio route
 	: basic_script	SED: --
 		\ in: 	none
 		\ out:	none
+		ps_alloc
 		discover_msg send_cmd_msg
 		wait_resp_with_timeout not if ;; then "Discover: " . . cr
 		get_default_route default_route_msg send_cmd_msg
@@ -292,14 +281,14 @@ ns: sdr-script
 		wait_resp_with_timeout not if ;; then  "Radio start: " . . cr ;
 		
 	\ Run with the simulation words uncommented.
-	cr cr "Running test cases..." . cr cr
-	test_cases
-	"Done test cases" . cr
+	\ cr cr "Running test cases..." . cr cr
+	\ test_cases
+	\ "Done test cases" . cr
 	
 	\ Run with the simulation words commented out.
-	\ "Running basic script..." . cr
-	\ basic_script
-	\ "Done.. the server will continue to run without the client." . cr
+	"Running basic script..." . cr
+	basic_script
+	"Done.. the server will continue to run without the client." . cr
 	
 	bye
 	

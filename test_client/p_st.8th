@@ -1,5 +1,5 @@
 (* 
-	param_stack.8th
+	p_st.8th
  
   Parameter storage
  
@@ -30,16 +30,8 @@ needs debug/sed
 
 \ ========================================
 
-\ Param stack array
-{} var, ps_st
 \ Max params per stack (depth)
 : PS_MAX_PARAMS 20 ;
-
-: ps_lock@	\ SED: -- m
-	ps_st lock @ ;
-
-: ps_unlock \ SED: --
-	ps_st unlock drop ;	
 	
 \ ===============================================================================
 \ Private
@@ -50,50 +42,42 @@ needs debug/sed
 	\ in: 	none
 	\ out:	s0 - true if successful
 	\				s1 - stack | null 
-	ps_lock@ t:name@ m:exists? if
-		\ Existsing entry for task
-		t:name@ m:@ nip true
-	else
-		\ No entry for task
-		drop null false
-	then 
-	ps_unlock ;
+	"p_st" t:@ ;
 
 \ Store the given stack for the current task
 : pss!	 SED: st --
 	\ in: 	stack
 	\ out:	none
-	\ pre: 	entry must exist
-	ps_lock@ t:name@ rot m:! drop ps_unlock ;
+	"p_st" t:! ;
 
 \ Pop TOS from the task param stack
 : ps>	 SED: -- *
 	\ in: 	none
 	\ out:	item of any type
-	ps_lock@ t:name@ m:@ nip st:pop nip ps_unlock ;
+	pss@ st:pop nip ;
 
 : ps@	 SED: -- *
 	\ in: 	none
 	\ out:	item of any type
-	ps_lock@ t:name@ m:@ nip 0 st:pick nip ps_unlock ;
+	pss@ 0 st:pick nip ;
 	
 : pps@	 SED: n -- *
 	\ in: 	item index
 	\ out:	item of any type
-	ps_lock@ t:name@ m:@ nip swap st:pick nip ps_unlock ;
+	pss@ swap st:pick nip ;
 
 \ Push the given item to the task param stack
 : ps!	 SED: * --
 	\ in: 	item of any type
 	\ out:	none
-	ps_lock@ t:name@ m:@ nip swap st:push drop ps_unlock ;
+	pss@ swap st:push drop ;
 	
 \ Check if initialised for current task
 \ Throw exception if not initialised
 : ps_check  SED: --
 	\ in: 	none
 	\ out:	none
-	pss@ not if
+	pss@ null? if
 		"Access attempt before the parameter stack has been initialised for task [" t:name@ s:+ "]!" s:+ nip throw
 	then drop ;
 
@@ -106,7 +90,7 @@ needs debug/sed
 : ps_alloc	 SED: --
 	\ in: 	none
 	\ out:	none
-	pss@ not if
+	pss@ null? if
 		\ No previous allocation for this task
 		\ Create a new entry
 		drop PS_MAX_PARAMS st:new pss!
@@ -151,7 +135,6 @@ needs debug/sed
 \ ========================================
 \ Testing
 
-(*
 \ Usage test
 : tn	\ name --
 	t:name!
@@ -173,9 +156,9 @@ needs debug/sed
 ;
 	
 : usage_test	\ --
-	' run_task 1 600 loop
+	' run_task 1 100 loop
 	1 sleep
-	"Current: " . ps_st @ . cr
+	\ "Current: " . ps_st @ . cr
 ;
 
 cr cr "Running usage test..." . cr cr
@@ -183,4 +166,4 @@ usage_test
 "Done usage test" . cr
 
 bye
-*)
+
