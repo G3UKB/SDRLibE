@@ -35,21 +35,40 @@
 %%----------------------------------------------------------------------
 start() ->
 	% Start the sdr interface
-	{ok, Socket} = gen_udp:open(0, [binary]),	
-	Msg = msg(enum_outputs),
-	gen_udp:send(Socket, "localhost", ?CMD_PORT, Msg),
-	Resp = get_resp(Socket),
-	Dec = jsone:decode(Resp),
-	io:format(Dec),
-	io:format(Resp).
+	{ok, Socket} = gen_udp:open(0, [binary]),
+	discover(Socket).
+
+	%Msg = msg(enum_outputs),
+	%gen_udp:send(Socket, "localhost", ?CMD_PORT, Msg),
+	%Resp = get_resp(Socket),
+	%Map = jsone:decode(Resp),
+	%List = maps:get(<<"outputs">>, Map),
+	%Element = lists:nth(2, List),
+	%Api = my_binary_to_list(maps:get(<<"api">>, Element)),
+	%Dev = my_binary_to_list(maps:get(<<"name">>, Element)),
+	%io:format("~p, ~p~n", [Api, Dev]).
+
+discover(Socket) ->
+	gen_udp:send(Socket, "localhost", ?CMD_PORT, msg(discover)),
+	decode_resp (get_resp(Socket)).
 
 get_resp(Socket) ->
 	receive
 		{udp, Socket,_,_,Bin} ->
 			Bin
-	after 2000 ->
-		error
+	after 5000 ->
+		exit("No response received!")
 	end.
+
+decode_resp(Resp) ->
+	Map = jsone:decode(Resp),
+	List = binary_to_list(maps:get(<<"resp">>, Map)),
+	io:format("Resp: ~p~n", [List]).
+
+
+my_binary_to_list(<<H,T/binary>>) ->
+    [H|my_binary_to_list(T)];
+my_binary_to_list(<<>>) -> [].
 
 %%----------------------------------------------------------------------
 %% Function: message
@@ -58,7 +77,7 @@ get_resp(Socket) ->
 %% Returns:	message
 %%	or 		{error, Reason}
 %%----------------------------------------------------------------------
-msg(discover) -> jsone:encode(#{<<"cmd">> => <<"discover">>, <<"params">> => []});
+msg(discover) -> jsone:encode(#{<<"cmd">> => <<"radio_discover">>, <<"params">> => []});
 msg(enum_outputs) -> jsone:encode(#{<<"cmd">> => <<"enum_outputs">>, <<"params">> => []});
 msg(set_audio_route) -> jsone:encode(#{<<"cmd">> => <<"set_audio_route">>, <<"params">> => []});
 msg(server_start) -> jsone:encode(#{<<"cmd">> => <<"server_start">>, <<"params">> => []});
