@@ -21,7 +21,7 @@
 %%
 
 -module(sdr_if).
--export([start/0, get_resp/1]).
+-export([start/0]).
 
 %% Constants
 -define(CMD_PORT, 10010).
@@ -36,20 +36,40 @@
 start() ->
 	% Start the sdr interface
 	{ok, Socket} = gen_udp:open(0, [binary]),
-	discover(Socket).
-
-	%Msg = msg(enum_outputs),
-	%gen_udp:send(Socket, "localhost", ?CMD_PORT, Msg),
-	%Resp = get_resp(Socket),
-	%Map = jsone:decode(Resp),
-	%List = maps:get(<<"outputs">>, Map),
-	%Element = lists:nth(2, List),
-	%Api = my_binary_to_list(maps:get(<<"api">>, Element)),
-	%Dev = my_binary_to_list(maps:get(<<"name">>, Element)),
-	%io:format("~p, ~p~n", [Api, Dev]).
+	discover(Socket),
+	set_audio_route(Socket),
+	server_start(Socket),
+	radio_start(Socket).
 
 discover(Socket) ->
+	io:format("Discover - "),
 	gen_udp:send(Socket, "localhost", ?CMD_PORT, msg(discover)),
+	decode_resp (get_resp(Socket)).
+
+set_audio_route(Socket) ->
+	io:format("EnumOutputs - "),
+	gen_udp:send(Socket, "localhost", ?CMD_PORT, msg(enum_outputs)),
+	Resp = get_resp(Socket),
+	Map = jsone:decode(Resp),
+	List = maps:get(<<"outputs">>, Map),
+	Element = lists:nth(2, List),
+	Api = maps:get(<<"api">>, Element),
+	Dev = maps:get(<<"name">>, Element),
+	io:format("ok~n"),
+	Msg = msg(set_audio_route),
+	PMsg = maps:put(<<"params">>, [1, <<"LOCAL">>, 1, Api, Dev, <<"BOTH">>], Msg),
+	io:format("SetRoute - "),
+	gen_udp:send(Socket, "localhost", ?CMD_PORT, jsone:encode(PMsg)),
+	decode_resp (get_resp(Socket)).
+
+server_start(Socket) ->
+	io:format("ServerStart - "),
+	gen_udp:send(Socket, "localhost", ?CMD_PORT, msg(server_start)),
+	decode_resp (get_resp(Socket)).
+
+radio_start(Socket) ->
+	io:format("RadioStart - "),
+	gen_udp:send(Socket, "localhost", ?CMD_PORT, msg(radio_start)),
 	decode_resp (get_resp(Socket)).
 
 get_resp(Socket) ->
@@ -65,11 +85,6 @@ decode_resp(Resp) ->
 	List = binary_to_list(maps:get(<<"resp">>, Map)),
 	io:format("Resp: ~p~n", [List]).
 
-
-my_binary_to_list(<<H,T/binary>>) ->
-    [H|my_binary_to_list(T)];
-my_binary_to_list(<<>>) -> [].
-
 %%----------------------------------------------------------------------
 %% Function: message
 %% Purpose: Return the selected message
@@ -79,6 +94,6 @@ my_binary_to_list(<<>>) -> [].
 %%----------------------------------------------------------------------
 msg(discover) -> jsone:encode(#{<<"cmd">> => <<"radio_discover">>, <<"params">> => []});
 msg(enum_outputs) -> jsone:encode(#{<<"cmd">> => <<"enum_outputs">>, <<"params">> => []});
-msg(set_audio_route) -> jsone:encode(#{<<"cmd">> => <<"set_audio_route">>, <<"params">> => []});
+msg(set_audio_route) -> #{<<"cmd">> => <<"set_audio_route">>, <<"params">> => []};
 msg(server_start) -> jsone:encode(#{<<"cmd">> => <<"server_start">>, <<"params">> => []});
 msg(radio_start) -> jsone:encode(#{<<"cmd">> => <<"radio_start">>, <<"params">> => [0]}).

@@ -403,7 +403,6 @@ static char* c_conn_set_audio_route(cJSON *params) {
 	strcpy_s(host_api, 50, cJSON_GetArrayItem(params, 3)->valuestring);
 	strcpy_s(dev, 50, cJSON_GetArrayItem(params, 4)->valuestring);
 	strcpy_s(channel, 10, cJSON_GetArrayItem(params, 5)->valuestring);
-	//printf("%d,%s,%d,%s,%s,%s\n", direction, location, receiver, host_api, dev, channel);
 	c_server_set_audio_route(direction, location, receiver, host_api, dev, channel);
 	return encode_ack_nak("ACK");
 }
