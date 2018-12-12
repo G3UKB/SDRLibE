@@ -137,6 +137,7 @@ needs debug/sed
 \ ========================================
 \ Testing
 
+(*
 \ Usage test
 : tn	\ name --
 	t:name!
@@ -167,4 +168,4 @@ usage_test
 "Done usage test" . cr
 
 bye
-
+*)

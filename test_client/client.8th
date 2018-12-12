@@ -24,7 +24,7 @@
 
 \ =========================================
 \ Testing only
-"param_stack.8th"  f:include
+"p_st.8th"  f:include
 
 needs debug/sed
 \ true SED-CHECK
