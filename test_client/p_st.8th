@@ -38,7 +38,7 @@ needs debug/sed
 \ ===============================================================================
 
 \ Return the stack associated with the calling task
-: pss@	 SED: -- * T
+: pss@	 SED: -- *
 	\ in: 	none
 	\ out:	s0 - true if successful
 	\				s1 - stack | null 
@@ -56,11 +56,13 @@ needs debug/sed
 	\ out:	item of any type
 	pss@ st:pop nip ;
 
+\ Copy TOS from the task param stack 
 : ps@	 SED: -- *
 	\ in: 	none
 	\ out:	item of any type
 	pss@ 0 st:pick nip ;
-	
+
+\ Pick item n from the task param stack 	
 : pps@	 SED: n -- *
 	\ in: 	item index
 	\ out:	item of any type
@@ -146,7 +148,7 @@ needs debug/sed
 	1 2 3 4 5 >p >p >p >p >p
 	0 pp@ 1 pp@ 2 pp@ 3 pp@ 4 pp@ 5 pp@
 	p> p> p> p> p> p> p> p> p> p>
-	"Task-" t:name@ s:+ " done" s:+ log
+	t:name@ " done" s:+ log
 ;
 
 [] var, ps_tasks
@@ -156,9 +158,8 @@ needs debug/sed
 ;
 	
 : usage_test	\ --
-	' run_task 1 100 loop
-	1 sleep
-	\ "Current: " . ps_st @ . cr
+	' run_task 1 600 loop
+	0.1 sleep
 ;
 
 cr cr "Running usage test..." . cr cr
