@@ -1,0 +1,118 @@
+(*
+	pubsub.8th
+ 
+  Publish/Subscribe interface
+ 
+ Copyright C 2018 by G3UKB Bob Cowdery
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ at your option any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+ 
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+  The author can be reached by email at:   
+     bob@bobcowdery.plus.com
+*)
+
+\ ========================================
+\ Testing only
+
+needs debug/sed
+true SED-CHECK
+
+\ Set namespace
+ns: C
+
+\ =============================================================================================
+\ Publish Subscribe task
+: do_reg	SED: m --
+	"Reg:" . . cr ;
+
+: do_sub	SED: m --
+	"Sub:" . . cr ;
+	
+: do_pub	SED: m --
+	"Pub:" . . cr ;
+
+: do_exit SED: m --
+	drop true "exit-sig" t:!
+;
+
+: msg_decode	SED: m --
+	\ Messages are of the following form:
+	\	{"type" : "reg"|"sub"|"pub|"exit", "data" : Any}
+	"type" m:@
+	{"reg" : ' do_reg , "sub" : ' do_sub , "pub" : ' do_pub , "exit" : ' do_exit }
+	case
+;
+
+\ =============================================================================================
+\ Task entry point
+\ All events are handled by this task which dispatches on its thread or 
+: pub_sub_task	 SED: --
+
+	\ Give us a name
+	"PUB-SUB-TASK" t:name!
+	false "exit-sig" t:!
+	
+	\ Wait on the task q for work
+	\ Up the q a little, should never really get that high
+	20 t:def-queue
+	\ Set q to return null on empty
+	t:getq false q:throwing
+	
+	\ Loop until quit
+	repeat
+		\ Wait for a wake up call or timeout
+		"exit-sig" t:@ if break then
+		100 t:q-wait
+		\ Empty the q
+		repeat
+			t:pop null? if
+				false
+			else
+				\ Message to process
+				msg_decode
+			then
+		while
+	again 
+	"pub_sub_task - exiting..." log
+;
+	
+\ =============================================================================================
+\ Registration
+\ All events must be registered before they can be used
+\ Event names are just strings
+\ : pubsub_register	\	event-name --
+
+
+\ Reset namespace
+ns: user
+
+\ =============================================================================================
+\ Testing
+
+: testit
+	' C:pub_sub_task t:task
+	dup
+	{"type" : "reg", "data" : [1,2,3,4,5]} t:push
+	dup
+	{"type" : "sub", "data" : [1,2,3,4,5]} t:push
+	dup
+	{"type" : "pub", "data" : [1,2,3,4,5]} t:push
+	1 sleep
+	{"type" : "exit"} t:push
+;
+
+testit
+1 sleep
+bye
+	
