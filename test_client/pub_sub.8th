@@ -47,16 +47,15 @@ ns: C
 	\ in: 	none
 	\ out:	pub/sub store
 	"ps_s" t:@ ;
-
-\ ========================================
-\ Registration helpers
-\
 \ Retrieve the event name
 : evnt_name@ SED: m -- s
 	\ in: 	{ "type" : ... , "data" : [evnt-name, f] }
 	\ out:	evnt-name
 	data@ 0 a:@ nip ;
-
+	
+\ ========================================
+\ Registration helpers
+\
 \ Retrieve the event flag
 : evnt_flg@ SED: m -- T
 	\ in: 	{ "type" : ... , "data" : [evnt-name, f] }
@@ -90,6 +89,15 @@ ns: C
 	swap ps_store_new ;
 
 \ ========================================
+\ Subscribe helpers
+\
+\ Retrieve the callback word
+: evnt_callback@ SED: m -- w
+	\ in: 	{ "type" : ... , "data" : [w] }
+	\ out:	w
+	data@ 0 a:@ nip ;
+	
+\ ========================================
 \ Message handlers
 \ Initialise the p/s structure
 : do_init SED: m --
@@ -116,10 +124,21 @@ ns: C
 
 \ Subscribe to an event
 : do_sub	SED: m --
-	\ in: 	{ "type" : "sub" , "data" : Opaque }
+	\ in: 	{ "type" : "sub" , "data" : [event-name, w]}
 	\ out:	none
-	"Sub:" . . cr ;
-
+	dup >r
+	ps_exists? if
+		\ Add a new subscriber to the event
+		\ Get the callback array
+		store@ r@ evnt_name@ m:@ nip
+		\ Get the callback word array [f,[w,w, ..]]
+		1 a:@
+		\ Store the new callback word in the array
+		r@ evnt_callback@ a:push
+	else
+		"No registration " r> evnt_name@ s:+ " to subscribe to" s:+ throw 
+	then ;
+		
 \ Publish an event	
 : do_pub	SED: m --
 	\ in: 	{ "type" : pub , "data" : Opaque }
@@ -167,7 +186,7 @@ ns: C
 		100 t:q-wait
 		\ Empty the q
 		repeat
-			t:pop .s null? if
+			t:pop null? if
 				drop false
 			else
 				\ Message to process
@@ -205,20 +224,33 @@ null var, t_pubsub
 	\ out:	none
 	a:new 0 rot a:! 1 rot a:!
 	{"type" : "reg"} "data" rot m:!
-	t_pubsub @ swap .s t:push ;
+	t_pubsub @ swap t:push ;
 
+\ Subscribe to an new
+: pubsub_subscribe	 SED: s w -- 
+	\ in:	s - event name	
+	\			w - callback word 	
+	\ out:	none
+	a:new 1 rot a:! 0 rot a:!
+	{"type" : "sub"} "data" rot m:!
+	t_pubsub @ swap .s t:push ;
 
 
 \ =============================================================================================
 \ Testing
 
+: callback_wd
+	"Hi, callback received" log ;
+	
 : testit
 	pubsub_init
 	
 	\ Calls fail
 	true "Event1" pubsub_register
-	\ 0.2 sleep
+	0.2 sleep
 	true "Event2" pubsub_register
+	0.2 sleep
+	"Event1" ' callback_wd pubsub_subscribe
 	
 	(*
 	\ In-line works
