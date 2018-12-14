@@ -26,90 +26,212 @@
 \ Testing only
 
 needs debug/sed
-true SED-CHECK
+\ true SED-CHECK
 
 \ Set namespace
 ns: C
 
 \ =============================================================================================
 \ Publish Subscribe task
-: do_reg	SED: m --
-	"Reg:" . . cr ;
+\ ========================================
+\ General Helpers
+\
+\ Return the data element
+: data@	SED: m -- *
+	\ in: 	{ "type" : ... , "data" : Any }
+	\ out:	Opaque data
+	"data" m:@ nip ;
 
+\ Return the pub/sub store	
+: store@	SED: -- m
+	\ in: 	none
+	\ out:	pub/sub store
+	"ps_s" t:@ ;
+
+\ ========================================
+\ Registration helpers
+\
+\ Retrieve the event name
+: evnt_name@ SED: m -- s
+	\ in: 	{ "type" : ... , "data" : [evnt-name, f] }
+	\ out:	evnt-name
+	data@ 0 a:@ nip ;
+
+\ Retrieve the event flag
+: evnt_flg@ SED: m -- T
+	\ in: 	{ "type" : ... , "data" : [evnt-name, f] }
+	\ out:	flag
+	data@ 1 a:@ nip ;	
+
+\ Does the event name already exist
+: ps_exists?	SED: m -- F
+	\ in: 	{ "type" : ... , "data" : [evnt-name, f] }
+	\ out:	flag
+	evnt_name@ store@ swap m:exists? nip ;
+
+\ Return default event data
+: ps_make_evnt_data	SED: m -- a
+	\ in: 	{ "type" : ... , "data" : [evnt-name, f] }
+	\ out:	[evnt_flg, []]
+	a:new 0 rot evnt_flg@ a:! 1 a:new a:! ; 
+
+\ Store initial event data
+: ps_store_new	SED: a m -- 
+	\ in: 	{ "type" : ... , "data" : [evnt-name, f] }
+	\				[f, []]
+	\ out:	[evnt_flg, []]
+	evnt_name@ store@ swap rot m:! drop ;
+
+\ Register a new entry	
+: ps_reg_new	SED: m --
+	\ in: 	{ "type" : ... , "data" : [evnt-name, f] }
+	\ out:	none
+	dup ps_make_evnt_data
+	swap ps_store_new ;
+
+\ ========================================
+\ Message handlers
+\ Initialise the p/s structure
+: do_init SED: m --
+	\ in: 	{ "type" : "init" }
+	\ out:	none
+	\
+	\ Create the dictionary in a task var
+	\ Form is as follows
+	\ {"name": [f,[w1,w2,w3...]], "name1": [f,[w4,w5,w6...]], ...}
+	drop {} "ps_s" t:! ;
+
+\ Register a new event
+: do_reg	SED: m --
+	\ in: 	{ "type" : "reg" , "data" : [evnt-name, f] }
+	\ out:	none
+	\ data: [evnt-name, f] where f==true if dispatch on main thread
+	dup >r
+	ps_exists? if
+		"The registration " r> evnt_name@ s:+ " already exists!" s:+ throw  
+	else
+		\ Create a new registration
+		r> ps_reg_new
+	then ;
+
+\ Subscribe to an event
 : do_sub	SED: m --
+	\ in: 	{ "type" : "sub" , "data" : Opaque }
+	\ out:	none
 	"Sub:" . . cr ;
-	
+
+\ Publish an event	
 : do_pub	SED: m --
+	\ in: 	{ "type" : pub , "data" : Opaque }
+	\ out:	none
 	"Pub:" . . cr ;
 
-: do_exit SED: m --
-	drop true "exit-sig" t:!
+\ Terminate task
+: do_term SED: m --
+	\ in: 	{ "type" : "term" }
+	\ out:	none
+	drop false "pub_sub_run" t:!
 ;
 
-: msg_decode	SED: m --
-	\ Messages are of the following form:
-	\	{"type" : "reg"|"sub"|"pub|"exit", "data" : Any}
+\ Decode and dispatch to message handlers
+: msg_decode	SED: m -- 
+	\ in: 	{"type" : "init"|"reg"|"sub"|"pub|"term", "data" : Any}
+	\ out:	none
 	"type" m:@
-	{"reg" : ' do_reg , "sub" : ' do_sub , "pub" : ' do_pub , "exit" : ' do_exit }
+	{ "init" : ' do_init , "reg" : ' do_reg , "sub" : ' do_sub , "pub" : ' do_pub , "term" : ' do_term }
 	case
 ;
 
 \ =============================================================================================
 \ Task entry point
-\ All events are handled by this task which dispatches on its thread or 
+\ All events are handled by this task which dispatches:
+\ 	- on its thread for SYS events
+\		- on the main thread for UI events
 : pub_sub_task	 SED: --
-
+	\ in: 	none
+	\ out:	none
 	\ Give us a name
 	"PUB-SUB-TASK" t:name!
-	false "exit-sig" t:!
+	\ Set us in the run state
+	true "pub_sub_run" t:!
 	
 	\ Wait on the task q for work
 	\ Up the q a little, should never really get that high
 	20 t:def-queue
 	\ Set q to return null on empty
-	t:getq false q:throwing
+	t:getq false q:throwing drop
 	
-	\ Loop until quit
+	\ Loop while running
 	repeat
 		\ Wait for a wake up call or timeout
-		"exit-sig" t:@ if break then
 		100 t:q-wait
 		\ Empty the q
 		repeat
-			t:pop null? if
-				false
+			t:pop .s null? if
+				drop false
 			else
 				\ Message to process
-				msg_decode
+				msg_decode true
 			then
-		while
-	again 
+		while!
+		\ Check for exit
+		"pub_sub_run" t:@
+	while!
 	"pub_sub_task - exiting..." log
 ;
-	
-\ =============================================================================================
-\ Registration
-\ All events must be registered before they can be used
-\ Event names are just strings
-\ : pubsub_register	\	event-name --
-
 
 \ Reset namespace
 ns: user
 
 \ =============================================================================================
+\ Main code can be called from any thread
+null var, t_pubsub
+
+\ Initialise publish/subscribe system
+: pubsub_init	SED: --
+	' C:pub_sub_task t:task dup t_pubsub !
+	{"type" : "init"} t:push ;
+
+\ Terminate publish/subscribe system
+: pubsub_term	SED: --
+	t_pubsub @ {"type" : "term"} t:push ;
+	
+\ Register a new event
+\ All events must be registered before they can be used
+\ Event names are just strings
+: pubsub_register	 SED: T s -- 
+	\ in:	s - event name 	
+	\			f - true if to be dispatched on main thread else p/s thread
+	\ out:	none
+	a:new 0 rot a:! 1 rot a:!
+	{"type" : "reg"} "data" rot m:!
+	t_pubsub @ swap .s t:push ;
+
+
+
+\ =============================================================================================
 \ Testing
 
 : testit
-	' C:pub_sub_task t:task
-	dup
-	{"type" : "reg", "data" : [1,2,3,4,5]} t:push
-	dup
-	{"type" : "sub", "data" : [1,2,3,4,5]} t:push
-	dup
-	{"type" : "pub", "data" : [1,2,3,4,5]} t:push
-	1 sleep
-	{"type" : "exit"} t:push
+	pubsub_init
+	
+	\ Calls fail
+	true "Event1" pubsub_register
+	\ 0.2 sleep
+	true "Event2" pubsub_register
+	
+	(*
+	\ In-line works
+	true "Event1" a:new 0 rot a:! 1 rot a:!
+	{"type" : "reg"} "data" rot m:!
+	t_pubsub @ swap .s t:push
+	
+	true "Event2" a:new 0 rot a:! 1 rot a:!
+	{"type" : "reg"} "data" rot m:!
+	t_pubsub @ swap .s t:push
+	*)
+	
+	pubsub_term
 ;
 
 testit
