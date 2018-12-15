@@ -44,36 +44,42 @@ needs debug/sed
 	\				s1 - stack | null 
 	"p_st" t:@ ;
 
+\ ----------------------------------
 \ Store the given stack for the current task
 : pss!	 SED: st --
 	\ in: 	stack
 	\ out:	none
 	"p_st" t:! ;
 
+\ ----------------------------------
 \ Pop TOS from the task param stack
 : ps>	 SED: -- *
 	\ in: 	none
 	\ out:	item of any type
 	pss@ st:pop nip ;
 
+\ ----------------------------------
 \ Copy TOS from the task param stack 
 : ps@	 SED: -- *
 	\ in: 	none
 	\ out:	item of any type
 	pss@ 0 st:pick nip ;
 
+\ ----------------------------------
 \ Pick item n from the task param stack 	
 : pps@	 SED: n -- *
 	\ in: 	item index
 	\ out:	item of any type
 	pss@ swap st:pick nip ;
 
+\ ----------------------------------
 \ Push the given item to the task param stack
 : ps!	 SED: * --
 	\ in: 	item of any type
 	\ out:	none
 	pss@ swap st:push drop ;
-	
+
+\ ----------------------------------
 \ Check if initialised for current task
 \ Throw exception if not initialised
 : ps_check  SED: --
@@ -103,6 +109,7 @@ needs debug/sed
 \ ========================================
 \ Parameter stack operations
 
+\ ----------------------------------
 \ Store TOS to task param stack
 : >p	 SED: * --
 	\ in: 	any type
@@ -110,6 +117,7 @@ needs debug/sed
 	ps_check
 	ps! ;
 
+\ ----------------------------------
 \ Retrieve TOS from task param stack
 : p>  SED: -- *
 	\ in: 	none
@@ -117,6 +125,7 @@ needs debug/sed
 	ps_check
 	ps> ;
 
+\ ----------------------------------
 \ Copy TOS from task param stack
 : p@	 SED: -- *
 	\ in: 	none
@@ -124,6 +133,7 @@ needs debug/sed
 	ps_check
 	ps@ ;
 
+\ ----------------------------------
 \ Copy item n from task param stack
 : pp@ SED: n -- *
 	\ in: 	none
@@ -137,7 +147,7 @@ needs debug/sed
 \ ========================================
 \ Testing
 
-
+(*
 \ Usage test
 : tn	\ name --
 	t:name!
@@ -169,3 +179,4 @@ usage_test
 
 bye
 
+*)
