@@ -84,8 +84,8 @@ typedef struct { char* str; FNPOINT f; }stringToFunc;
 stringToFunc funcCases[] =
 {
 	{ "set_rx1_freq",		c_conn_cc_out_set_rx_1_freq },
-	{ "set_rx1_freq",		c_conn_cc_out_set_rx_2_freq },
-	{ "set_rx2_freq",		c_conn_cc_out_set_rx_3_freq },
+	{ "set_rx2_freq",		c_conn_cc_out_set_rx_2_freq },
+	{ "set_rx3_freq",		c_conn_cc_out_set_rx_3_freq },
 	{ "set_tx_freq",		c_conn_cc_out_set_tx_freq },
 	{ "set_in_rate",		c_conn_set_in_rate },
 	{ "set_out_rate",		c_conn_set_out_rate },
