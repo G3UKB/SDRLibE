@@ -36,6 +36,7 @@ static void send_conn_resp(int sd, struct sockaddr_in* conn_cli_addr, char* resp
 static char* encode_ack_nak(char* data);
 
 // Execution functions
+// General set functions
 static char* c_conn_set_in_rate (cJSON *params);
 static char* c_conn_set_out_rate (cJSON *params);
 static char* c_conn_set_iq_blk_sz (cJSON *params);
@@ -46,20 +47,33 @@ static char* c_conn_set_window_type (cJSON *params);
 static char* c_conn_set_av_mode (cJSON *params);
 static char* c_conn_set_display_width(cJSON *params);
 static char* c_conn_set_audio_route(cJSON *params);
+// Audio functions
+static char* c_conn_enum_audio_inputs(cJSON *params);
+static char* c_conn_enum_audio_outputs(cJSON *params);
+// Management functions
 static char* c_conn_server_start(cJSON *params);
 static char* c_conn_server_terminate(cJSON *params);
 static char* c_conn_radio_discover(cJSON *params);
 static char* c_conn_radio_start(cJSON *params);
 static char* c_conn_radio_stop(cJSON *params);
+// Hardware control functions
 static char* c_conn_cc_out_set_rx_1_freq(cJSON *params);
 static char* c_conn_cc_out_set_rx_2_freq(cJSON *params);
 static char* c_conn_cc_out_set_rx_3_freq(cJSON *params);
 static char* c_conn_cc_out_set_tx_freq(cJSON *params);
+// DSP functions
 static char* c_conn_make_wisdom(cJSON *params);
-static char* c_conn_enum_audio_inputs(cJSON *params);
-static char* c_conn_enum_audio_outputs(cJSON *params);
 static char* c_conn_set_disp_period(cJSON *params);
 static char* c_conn_set_disp_status(cJSON *params);
+static char* c_conn_set_rx_1_mode(cJSON *params);
+static char* c_conn_set_rx_2_mode(cJSON *params);
+static char* c_conn_set_rx_3_mode(cJSON *params);
+static char* c_conn_set_tx_mode(cJSON *params);
+static char* c_conn_set_rx_1_filter(cJSON *params);
+static char* c_conn_set_rx_2_filter(cJSON *params);
+static char* c_conn_set_rx_3_filter(cJSON *params);
+static char* c_conn_set_tx_filter(cJSON *params);
+
 
 //==========================================================================================
 // The socket
@@ -78,7 +92,8 @@ char data_in[CONN_DATA_SZ];
 
 //==========================================================================================
 // Dispatcher table
-// A dictionary entry
+// A dictionary entry for each command. The order of these is most used first as the lookup is 
+// pretty inefficient.
 typedef char*(*FNPOINT)(cJSON *);
 typedef struct { char* str; FNPOINT f; }stringToFunc;
 stringToFunc funcCases[] =
@@ -87,6 +102,14 @@ stringToFunc funcCases[] =
 	{ "set_rx2_freq",		c_conn_cc_out_set_rx_2_freq },
 	{ "set_rx3_freq",		c_conn_cc_out_set_rx_3_freq },
 	{ "set_tx_freq",		c_conn_cc_out_set_tx_freq },
+	{ "set_rx1_mode",		c_conn_set_rx_1_mode },
+	{ "set_rx2_mode",		c_conn_set_rx_2_mode },
+	{ "set_rx3_mode",		c_conn_set_rx_3_mode },
+	{ "set_tx_mode",		c_conn_set_tx_mode },
+	{ "set_rx1_filter",		c_conn_set_rx_1_filter },
+	{ "set_rx2_filter",		c_conn_set_rx_2_filter },
+	{ "set_rx3_filter",		c_conn_set_rx_3_filter },
+	{ "set_tx_filter",		c_conn_set_tx_filter },
 	{ "set_in_rate",		c_conn_set_in_rate },
 	{ "set_out_rate",		c_conn_set_out_rate },
 	{ "set_iq_blk_sz",		c_conn_set_iq_blk_sz },
@@ -108,7 +131,7 @@ stringToFunc funcCases[] =
 	{ "set_disp_period",	c_conn_set_disp_period },
 	{ "set_disp_status",	c_conn_set_disp_status },
 };
-#define MAX_CASES 24
+#define MAX_CASES 32
 
 // Json structures
 cJSON *root;
@@ -625,6 +648,82 @@ static char* c_conn_set_disp_status(cJSON *params) {
 		conn_disp_3_udp_start();
 	else
 		conn_disp_3_udp_stop();
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_1_mode(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	mode id
+	*/
+	c_server_set_rx_mode(0, cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_2_mode(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	mode id
+	*/
+	c_server_set_rx_mode(1, cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_3_mode(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	mode id
+	*/
+	c_server_set_rx_mode(2, cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_tx_mode(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	mode id
+	*/
+	c_server_set_tx_mode(0, cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_1_filter(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	filter low
+	** 	p1		-- 	filter high
+	*/
+	c_server_set_rx_filter_freq(0, cJSON_GetArrayItem(params, 0)->valueint, cJSON_GetArrayItem(params, 1)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_2_filter(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	filter low
+	** 	p1		-- 	filter high
+	*/
+	c_server_set_rx_filter_freq(1, cJSON_GetArrayItem(params, 0)->valueint, cJSON_GetArrayItem(params, 1)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_3_filter(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	filter low
+	** 	p1		-- 	filter high
+	*/
+	c_server_set_rx_filter_freq(2, cJSON_GetArrayItem(params, 0)->valueint, cJSON_GetArrayItem(params, 1)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_tx_filter(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	filter low
+	** 	p1		-- 	filter high
+	*/
+	c_server_set_tx_filter_freq(0, cJSON_GetArrayItem(params, 0)->valueint, cJSON_GetArrayItem(params, 1)->valueint);
 	return encode_ack_nak("ACK");
 }
 
