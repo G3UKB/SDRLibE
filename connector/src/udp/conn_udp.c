@@ -36,6 +36,8 @@ static void send_conn_resp(int sd, struct sockaddr_in* conn_cli_addr, char* resp
 static char* encode_ack_nak(char* data);
 
 // Execution functions
+// Heartbeat
+static char* c_conn_poll(cJSON *params);
 // General set functions
 static char* c_conn_set_in_rate (cJSON *params);
 static char* c_conn_set_out_rate (cJSON *params);
@@ -98,6 +100,7 @@ typedef char*(*FNPOINT)(cJSON *);
 typedef struct { char* str; FNPOINT f; }stringToFunc;
 stringToFunc funcCases[] =
 {
+	{ "poll",				c_conn_poll },
 	{ "set_rx1_freq",		c_conn_cc_out_set_rx_1_freq },
 	{ "set_rx2_freq",		c_conn_cc_out_set_rx_2_freq },
 	{ "set_rx3_freq",		c_conn_cc_out_set_rx_3_freq },
@@ -324,7 +327,14 @@ static void send_conn_resp(int sd, struct sockaddr* conn_cli_addr, char* resp) {
 //==========================================================================================
 // Execution functions
 // These extract the param list items and call the server function
-// One way calls i.e. no response
+// Returning only ACK/NAK
+static char* c_conn_poll(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+	return encode_ack_nak("ACK");
+}
+
 static char* c_conn_set_in_rate(cJSON *params) {
 	/*
 	** Arguments:
