@@ -256,7 +256,7 @@ static void udpconndata(UDPConnThreadData* td) {
 	FD_CLR(0, &read_fd);
 	FD_SET(sd, &read_fd);
 	struct timeval tv;
-	tv.tv_sec = 10;
+	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 	int sel_result;
 	int rd_sz;
@@ -272,13 +272,17 @@ static void udpconndata(UDPConnThreadData* td) {
 		sel_result = select(0, &read_fd, NULL, NULL, &tv);
 		if (sel_result == 0) {
 			// Timeout to check for termination etc
-			printf("Connector: Timeout\n");
+			// This is not an error, it's expected but we have to reset the read fd's
+			// otherwise it continually returns SOCKET_ERROR thereafter.
+			// printf("Connector: Timeout\n");
+			FD_SET(sd, &read_fd);
 		}
 		else if (sel_result == SOCKET_ERROR) {
 			// Problem
-			//printf("Connector: Error in select! [%d]\n", WSAGetLastError());
-			// Try to continue
-			Sleep(10.0);
+			printf("Connector: Error in select! [%d]\n", WSAGetLastError());
+			FD_SET(sd, &read_fd);
+			// See if it goes away
+			Sleep(5000);
 		}
 		else {
 			// We have a command packet
