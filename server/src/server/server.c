@@ -455,7 +455,7 @@ int c_radio_stop() {
 		printf("c.server: Failed to stop radio hardware!\n");
 		return FALSE;
 	}
-	c_server_running = FALSE;
+	c_radio_running = FALSE;
 	printf("c.server: Radio stopped\n");
 	return TRUE;
 }
