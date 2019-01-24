@@ -66,7 +66,7 @@ static char* c_conn_cc_out_set_tx_freq(cJSON *params);
 // DSP functions
 static char* c_conn_make_wisdom(cJSON *params);
 static char* c_conn_set_disp_period(cJSON *params);
-static char* c_conn_set_disp_status(cJSON *params);
+static char* c_conn_set_disp_state(cJSON *params);
 static char* c_conn_set_rx_1_mode(cJSON *params);
 static char* c_conn_set_rx_2_mode(cJSON *params);
 static char* c_conn_set_rx_3_mode(cJSON *params);
@@ -132,7 +132,7 @@ stringToFunc funcCases[] =
 	{ "enum_inputs",		c_conn_enum_audio_inputs },
 	{ "enum_outputs",		c_conn_enum_audio_outputs },
 	{ "set_disp_period",	c_conn_set_disp_period },
-	{ "set_disp_status",	c_conn_set_disp_status },
+	{ "set_disp_state",		c_conn_set_disp_state },
 };
 #define MAX_CASES 32
 
@@ -639,7 +639,7 @@ static char* c_conn_set_disp_period(cJSON *params) {
 	return encode_ack_nak("ACK");
 }
 
-static char* c_conn_set_disp_status(cJSON *params) {
+static char* c_conn_set_disp_state(cJSON *params) {
 	/*
 	** Arguments:
 	** 	p0		-- 	TRUE - disp_1
