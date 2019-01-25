@@ -649,18 +649,21 @@ static char* c_conn_set_disp_state(cJSON *params) {
 	*/
 	int state;
 	state = cJSON_GetArrayItem(params, 0)->valueint;
-	if (state)
+	if (state) {
 		conn_disp_1_udp_start();
+	}
 	else
 		conn_disp_1_udp_stop();
 	state = cJSON_GetArrayItem(params, 1)->valueint;
-	if (state)
+	if (state) {
 		conn_disp_2_udp_start();
+	}
 	else
 		conn_disp_2_udp_stop();
 	state = cJSON_GetArrayItem(params, 2)->valueint;
-	if (state)
+	if (state) {
 		conn_disp_3_udp_start();
+	}
 	else
 		conn_disp_3_udp_stop();
 	return encode_ack_nak("ACK");
