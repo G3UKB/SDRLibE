@@ -196,6 +196,7 @@ void c_server_set_av_mode(int mode) {
 
 void c_server_set_display_width(int width) {
 	if (!c_server_running) pargs->general.display_width = width;
+	c_server_set_display(0, width);
 }
 
 // Optional audio update, otherwsie default is HPSDR for input and output on RX 1
@@ -714,7 +715,6 @@ short c_server_get_peak_input_level() {
 
 // Set display is called when the display width changes during run-time
 void c_server_set_display(int ch_id, int display_width) {
-
 	c_impl_server_set_display(	ch_id,
 								pargs->general.fft_size,
 								pargs->general.window_type,

@@ -71,9 +71,13 @@ static char* c_conn_set_rx_1_mode(cJSON *params);
 static char* c_conn_set_rx_2_mode(cJSON *params);
 static char* c_conn_set_rx_3_mode(cJSON *params);
 static char* c_conn_set_tx_mode(cJSON *params);
+static char* c_conn_adjust_filter(int inst, int low, int high, int*new_low, int*new_high);
 static char* c_conn_set_rx_1_filter(cJSON *params);
+static do_rx_1_filter(int inst, int low, int high);
 static char* c_conn_set_rx_2_filter(cJSON *params);
+static do_rx_2_filter(int inst, int low, int high);
 static char* c_conn_set_rx_3_filter(cJSON *params);
+static do_rx_3_filter(int inst, int low, int high);
 static char* c_conn_set_tx_filter(cJSON *params);
 
 
@@ -91,6 +95,10 @@ struct sockaddr_in conn_cli_addr;
 
 // Receive data packet
 char data_in[CONN_DATA_SZ];
+
+// Last mode and filter
+int last_mode[3];
+int last_filter[3][2];
 
 //==========================================================================================
 // Dispatcher table
@@ -144,7 +152,7 @@ cJSON *params;
 // Initialise module
 int conn_udp_init() {
 
-	int rc;
+	int i, rc;
 	
 	// Create our UDP socket
 	connector_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -183,6 +191,14 @@ int conn_udp_init() {
 		printf("Connector: Failed to create connector thread! [%d]\n", rc);
 		exit(-1);
 	}
+
+	// Set defaults for mode and filter
+	for (i = 0; i < 3; i++) {
+		last_mode[i] = 0;
+		last_filter[i][0] = 300;
+		last_filter[i][1] = 2700;
+	}
+	
 	printf("Connector: Initialised Connector UDP interface\n");
 }
 
@@ -674,7 +690,10 @@ static char* c_conn_set_rx_1_mode(cJSON *params) {
 	** Arguments:
 	** 	p0		-- 	mode id
 	*/
-	c_server_set_rx_mode(0, cJSON_GetArrayItem(params, 0)->valueint);
+	int mode = cJSON_GetArrayItem(params, 0)->valueint;
+	last_mode[0] = mode;
+	c_server_set_rx_mode(0, mode);
+	do_rx_1_filter(0, last_filter[0][0], last_filter[0][1]);
 	return encode_ack_nak("ACK");
 }
 
@@ -683,7 +702,10 @@ static char* c_conn_set_rx_2_mode(cJSON *params) {
 	** Arguments:
 	** 	p0		-- 	mode id
 	*/
-	c_server_set_rx_mode(1, cJSON_GetArrayItem(params, 0)->valueint);
+	int mode = cJSON_GetArrayItem(params, 0)->valueint;
+	last_mode[1] = mode;
+	c_server_set_rx_mode(1, mode);
+	do_rx_2_filter(1, last_filter[1][0], last_filter[1][1]);
 	return encode_ack_nak("ACK");
 }
 
@@ -693,6 +715,12 @@ static char* c_conn_set_rx_3_mode(cJSON *params) {
 	** 	p0		-- 	mode id
 	*/
 	c_server_set_rx_mode(2, cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+
+	int mode = cJSON_GetArrayItem(params, 0)->valueint;
+	last_mode[2] = mode;
+	c_server_set_rx_mode(2, mode);
+	do_rx_3_filter(2, last_filter[2][0], last_filter[2][1]);
 	return encode_ack_nak("ACK");
 }
 
@@ -705,14 +733,48 @@ static char* c_conn_set_tx_mode(cJSON *params) {
 	return encode_ack_nak("ACK");
 }
 
+static char* c_conn_adjust_filter(int inst, int low, int high, int*new_low, int*new_high) {
+	int mode = last_mode[inst];
+	if (mode == 0 || mode == 3 || mode == 9) {
+		// LSB
+		*new_low = -high;
+		*new_high = -low;
+	}
+	else if (mode == 2 || mode == 5 || mode == 6 || mode == 8 || mode == 10 || mode == 11) {
+		// LSB+USB
+		*new_low = -high;
+		*new_high = high;
+	}
+	else {
+		// USB
+		*new_low = low;
+		*new_high = high;
+	}
+}
+
 static char* c_conn_set_rx_1_filter(cJSON *params) {
 	/*
 	** Arguments:
 	** 	p0		-- 	filter low
 	** 	p1		-- 	filter high
 	*/
-	c_server_set_rx_filter_freq(0, cJSON_GetArrayItem(params, 0)->valueint, cJSON_GetArrayItem(params, 1)->valueint);
+	int low = cJSON_GetArrayItem(params, 0)->valueint;
+	int high = cJSON_GetArrayItem(params, 1)->valueint;
+
+	do_rx_1_filter(0, low, high);
 	return encode_ack_nak("ACK");
+}
+
+static do_rx_1_filter(int inst, int low, int high) {
+	int new_low;
+	int new_high;
+
+	// Adjust filter for mode and save filter
+	c_conn_adjust_filter(0, low, high, &new_low, &new_high);
+	last_filter[0][0] = low;
+	last_filter[0][1] = high;
+
+	c_server_set_rx_filter_freq(0, new_low, new_high);
 }
 
 static char* c_conn_set_rx_2_filter(cJSON *params) {
@@ -721,8 +783,23 @@ static char* c_conn_set_rx_2_filter(cJSON *params) {
 	** 	p0		-- 	filter low
 	** 	p1		-- 	filter high
 	*/
-	c_server_set_rx_filter_freq(1, cJSON_GetArrayItem(params, 0)->valueint, cJSON_GetArrayItem(params, 1)->valueint);
+	int low = cJSON_GetArrayItem(params, 0)->valueint;
+	int high = cJSON_GetArrayItem(params, 1)->valueint;
+
+	do_rx_2_filter(1, low, high);
 	return encode_ack_nak("ACK");
+}
+
+static do_rx_2_filter(int inst, int low, int high) {
+	int new_low;
+	int new_high;
+
+	// Adjust filter for mode and save filter
+	c_conn_adjust_filter(1, low, high, &new_low, &new_high);
+	last_filter[1][0] = low;
+	last_filter[1][1] = high;
+
+	c_server_set_rx_filter_freq(1, new_low, new_high);
 }
 
 static char* c_conn_set_rx_3_filter(cJSON *params) {
@@ -731,8 +808,23 @@ static char* c_conn_set_rx_3_filter(cJSON *params) {
 	** 	p0		-- 	filter low
 	** 	p1		-- 	filter high
 	*/
-	c_server_set_rx_filter_freq(2, cJSON_GetArrayItem(params, 0)->valueint, cJSON_GetArrayItem(params, 1)->valueint);
+	int low = cJSON_GetArrayItem(params, 0)->valueint;
+	int high = cJSON_GetArrayItem(params, 1)->valueint;
+
+	do_rx_3_filter(2, low, high);
 	return encode_ack_nak("ACK");
+}
+
+static do_rx_3_filter(int inst, int low, int high) {
+	int new_low;
+	int new_high;
+
+	// Adjust filter for mode and save filter
+	c_conn_adjust_filter(2, low, high, &new_low, &new_high);
+	last_filter[2][0] = low;
+	last_filter[2][1] = high;
+
+	c_server_set_rx_filter_freq(2, new_low, new_high);
 }
 
 static char* c_conn_set_tx_filter(cJSON *params) {
