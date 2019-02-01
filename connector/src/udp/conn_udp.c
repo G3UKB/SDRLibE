@@ -433,7 +433,9 @@ static char* c_conn_set_display_width(cJSON *params) {
 	** Arguments:
 	** 	p0		-- 	display width
 	*/
-	c_server_set_display_width(cJSON_GetArrayItem(params, 0)->valueint);
+	int width = cJSON_GetArrayItem(params, 0)->valueint;
+	c_server_set_display_width(width);
+	conn_set_disp_width(width);
 	return encode_ack_nak("ACK");
 }
 

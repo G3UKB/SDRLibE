@@ -45,7 +45,7 @@ The authors can be reached by email at:
 #define OUT_RATE 48000
 #define IQ_BLK_SZ 1024
 #define MIC_BLK_SZ 1024
-#define FFT_SZ 2048
+#define FFT_SZ 4096
 #define DISPLAY_WIDTH 600
 
 #define HPSDR "HPSDR"

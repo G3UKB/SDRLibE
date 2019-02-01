@@ -744,6 +744,7 @@ int c_server_get_display_data(int display_id, void *display_data) {
 	float *data = (float*)display_data;
 	flag = 0;
 	GetPixels(display_id, pan, &flag);
+	// printf("Sz: %d\n", pan_sz);
 	for (i=0 ; i<pan_sz ; i++) {
 		data[i] = pan[i];
 	}
