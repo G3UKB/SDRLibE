@@ -203,7 +203,12 @@ void c_server_set_av_mode(int mode) {
 
 void c_server_set_display_width(int width) {
 	if (!c_server_running) pargs->general.display_width = width;
-	c_server_set_display(0, width);
+	if (pargs->num_rx >= 1)
+		c_server_set_display(0, width);
+	if (pargs->num_rx >= 2)
+		c_server_set_display(1, width);
+	if (pargs->num_rx >= 3)
+		c_server_set_display(2, width);
 }
 
 // Optional audio update, otherwsie default is HPSDR for input and output on RX 1
