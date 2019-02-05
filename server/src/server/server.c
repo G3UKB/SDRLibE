@@ -154,6 +154,10 @@ int c_server_init() {
 		strcpy(pargs->audio.routing.local[i].ch, "");
 	}
 
+	// Init the CC bytes with defaults
+	cc_out_init();
+
+	// Done
 	c_server_initialised = TRUE;
 	printf("c.server: Server initialised\n");
 	return TRUE;
@@ -303,8 +307,6 @@ int c_server_start() {
 	reader_init(sd, &srv_addr, pargs->num_rx, pargs->general.in_rate);
 	// Init sequence processing
 	seq_init();
-	// Init the CC bytes with defaults
-	cc_out_init();
 
 	//==============================================================
 	// Start pipeline processing
@@ -1202,7 +1204,6 @@ static void create_display_channels() {
 
 // Set any new values in the cc data to override defaults
 static void set_cc_data() {
-
 	// Set num rx
 	int num_rx = pargs->num_rx;
 	if (num_rx == 1)
