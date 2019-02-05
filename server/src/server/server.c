@@ -162,6 +162,9 @@ int c_server_init() {
 // Optional updates to general configuration
 // If required these must be updated before the server is started
 // Updates are not accepted once the server is running
+void c_server_set_num_rx(int num_rx) {
+	if (!c_server_running) pargs->num_rx = num_rx;
+}
 void c_server_set_in_rate(int rate) {
 	if( !c_server_running ) pargs->general.in_rate = rate;
 }

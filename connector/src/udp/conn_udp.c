@@ -39,6 +39,7 @@ static char* encode_ack_nak(char* data);
 // Heartbeat
 static char* c_conn_poll(cJSON *params);
 // General set functions
+static char* c_conn_set_num_rx(cJSON *params);
 static char* c_conn_set_in_rate (cJSON *params);
 static char* c_conn_set_out_rate (cJSON *params);
 static char* c_conn_set_iq_blk_sz (cJSON *params);
@@ -141,8 +142,9 @@ stringToFunc funcCases[] =
 	{ "enum_outputs",		c_conn_enum_audio_outputs },
 	{ "set_disp_period",	c_conn_set_disp_period },
 	{ "set_disp_state",		c_conn_set_disp_state },
+	{ "set_num_rx",			c_conn_set_num_rx },
 };
-#define MAX_CASES 33
+#define MAX_CASES 34
 
 // Json structures
 cJSON *root;
@@ -353,6 +355,15 @@ static char* c_conn_poll(cJSON *params) {
 	/*
 	** Arguments:
 	*/
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_num_rx(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	num rx
+	*/
+	c_server_set_num_rx(cJSON_GetArrayItem(params, 0)->valueint);
 	return encode_ack_nak("ACK");
 }
 
