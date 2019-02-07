@@ -324,7 +324,7 @@ static void udpconndata(UDPConnThreadData* td) {
 			// Extract command name
 			strcpy_s(name, 30, cJSON_GetObjectItemCaseSensitive(root, "cmd")->valuestring);
 			// Dispatch
-			// printf("Cmd: %s\n", name);
+			printf("Cmd: %s\n", name);
 			for (int i = 0; i < MAX_CASES ; i++) {
 				if (strcmp(funcCases[i].str, name) == 0) {
 					char* resp = (funcCases[i].f)(params);
