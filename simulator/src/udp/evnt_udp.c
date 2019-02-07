@@ -34,9 +34,7 @@ bob@bobcowdery.plus.com
 static void *udp_evnt_conn_imp(void* data);
 static void udp_evnt_data(UDPEvntThreadData* td);
 static void send_evnt_data(int sd, struct sockaddr* conn_cli_addr, char* data, int sz);
-static void get_display_data_1();
-static void get_display_data_2();
-static void get_display_data_3();
+static void get_display_data();
 static float get_meter_data();
 
 //==========================================================================================
@@ -278,7 +276,7 @@ static void udp_evnt_data(UDPEvntThreadData* td) {
 					// printf("Display 1\n");
 					meter_data = get_meter_data();
 					memcpy(td->disp_1_data, &meter_data, 4);
-					get_display_data_1(td->disp_width, td->disp_1_data);
+					get_display_data(td->disp_width, td->disp_1_data);
 					// printf("Sending data\n");
 					send_evnt_data(td->disp_1_socket, disp_1_addr, td->disp_1_data, td->disp_width * 4);
 				}
@@ -286,14 +284,14 @@ static void udp_evnt_data(UDPEvntThreadData* td) {
 					// printf("Display 2\n");
 					meter_data = get_meter_data();
 					memcpy(td->disp_2_data, &meter_data, 4);
-					get_display_data_2(td->disp_width, td->disp_1_data);
+					get_display_data(td->disp_width, td->disp_2_data);
 					send_evnt_data(td->disp_2_socket, disp_2_addr, td->disp_2_data, td->disp_width * 4);
 				}
 				if (td->run_disp[2]) {
 					// printf("Display 3\n");
 					meter_data = get_meter_data();
 					memcpy(td->disp_3_data, &meter_data, 4);
-					get_display_data_3(td->disp_width, td->disp_1_data);
+					get_display_data(td->disp_width, td->disp_3_data);
 					send_evnt_data(td->disp_3_socket, disp_3_addr, td->disp_3_data, td->disp_width * 4);
 				}
 				// printf("Done display data\n");
@@ -321,38 +319,24 @@ static void send_evnt_data(int sd, struct sockaddr* conn_cli_addr, char* data, i
 
 // Simulated data
 static float get_meter_data() {
-	return -20.0;
+	return -50.0;
 }
 
-static void get_display_data_1(int width, char* disp_data) {
+static void get_display_data(int width, char* disp_data) {
 	int i;
 	float* data = (float*)disp_data;
 	float value = -140.0;
-	for (i = 4; i < width+4; i++) {
-		data[i] = value;
-		value += 1;
-	}
-}
-
-static void get_display_data_2(int width, char* disp_data) {
-	int i;
-	float* data = (float*)disp_data;
-	float value = 20.0;
+	int dir = 0;
 	for (i = 4; i < width + 4; i++) {
 		data[i] = value;
-		value -= 1;
-	}
-}
-
-static void get_display_data_3(int width, char* disp_data) {
-	int i;
-	float* data = (float*)disp_data;
-	float value = -50.0;
-	for (i = 4; i < width + 4; i++) {
-		data[i] = value;
-		if(value < 20)
+		if (dir == 0) {
 			value += 1;
-		else
+			if (value >= -20.0)
+				dir = 1;
+		} else {
 			value -= 1;
+			if (value <= -140.0)
+				dir = 0;
+		}
 	}
 }
