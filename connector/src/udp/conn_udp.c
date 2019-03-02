@@ -64,6 +64,8 @@ static char* c_conn_cc_out_set_rx_1_freq(cJSON *params);
 static char* c_conn_cc_out_set_rx_2_freq(cJSON *params);
 static char* c_conn_cc_out_set_rx_3_freq(cJSON *params);
 static char* c_conn_cc_out_set_tx_freq(cJSON *params);
+static char* c_conn_cc_out_set_hf_pre(cJSON *params);
+static char* c_conn_cc_out_set_attn(cJSON *params);
 // DSP functions
 static char* c_conn_make_wisdom(cJSON *params);
 static char* c_conn_set_disp_period(cJSON *params);
@@ -72,6 +74,12 @@ static char* c_conn_set_rx_1_mode(cJSON *params);
 static char* c_conn_set_rx_2_mode(cJSON *params);
 static char* c_conn_set_rx_3_mode(cJSON *params);
 static char* c_conn_set_tx_mode(cJSON *params);
+static char* c_conn_set_rx_1_agc(cJSON *params);
+static char* c_conn_set_rx_2_agc(cJSON *params);
+static char* c_conn_set_rx_3_agc(cJSON *params);
+static char* c_conn_set_rx_1_gain(cJSON *params);
+static char* c_conn_set_rx_2_gain(cJSON *params);
+static char* c_conn_set_rx_3_gain(cJSON *params);
 static char* c_conn_adjust_filter(int inst, int low, int high, int*new_low, int*new_high);
 static char* c_conn_set_rx_1_filter(cJSON *params);
 static do_rx_1_filter(int inst, int low, int high);
@@ -122,6 +130,12 @@ stringToFunc funcCases[] =
 	{ "set_rx2_filter",		c_conn_set_rx_2_filter },
 	{ "set_rx3_filter",		c_conn_set_rx_3_filter },
 	{ "set_tx_filter",		c_conn_set_tx_filter },
+	{ "set_rx1_agc",		c_conn_set_rx_1_agc },
+	{ "set_rx2_agc",		c_conn_set_rx_2_agc },
+	{ "set_rx3_agc",		c_conn_set_rx_3_agc },
+	{ "set_rx1_gain",		c_conn_set_rx_1_gain },
+	{ "set_rx2_gain",		c_conn_set_rx_2_gain },
+	{ "set_rx3_gain",		c_conn_set_rx_3_gain },
 	{ "set_in_rate",		c_conn_set_in_rate },
 	{ "set_out_rate",		c_conn_set_out_rate },
 	{ "set_iq_blk_sz",		c_conn_set_iq_blk_sz },
@@ -143,6 +157,8 @@ stringToFunc funcCases[] =
 	{ "set_disp_period",	c_conn_set_disp_period },
 	{ "set_disp_state",		c_conn_set_disp_state },
 	{ "set_num_rx",			c_conn_set_num_rx },
+	{ "set_hf_pre",			c_conn_cc_out_set_hf_pre },
+	{ "set_attn",			c_conn_cc_out_set_attn },
 };
 #define MAX_CASES 34
 
@@ -537,7 +553,7 @@ static char* c_conn_cc_out_set_rx_2_freq(cJSON *params) {
 	** Arguments:
 	** 	p0		-- 	freq in Hz
 	*/
-	cc_out_set_rx_2_freq(cJSON_GetArrayItem(params, 0)->valueint);
+	c_server_cc_out_set_rx_2_freq(cJSON_GetArrayItem(params, 0)->valueint);
 	return encode_ack_nak("ACK");
 }
 
@@ -546,7 +562,7 @@ static char* c_conn_cc_out_set_rx_3_freq(cJSON *params) {
 	** Arguments:
 	** 	p0		-- 	freq in Hz
 	*/
-	cc_out_set_rx_3_freq(cJSON_GetArrayItem(params, 0)->valueint);
+	c_server_cc_out_set_rx_3_freq(cJSON_GetArrayItem(params, 0)->valueint);
 	return encode_ack_nak("ACK");
 }
 
@@ -555,9 +571,28 @@ static char* c_conn_cc_out_set_tx_freq(cJSON *params) {
 	** Arguments:
 	** 	p0		-- 	freq in Hz
 	*/
-	cc_out_set_tx_freq(cJSON_GetArrayItem(params, 0)->valueint);
+	c_server_cc_out_set_tx_freq(cJSON_GetArrayItem(params, 0)->valueint);
 	return encode_ack_nak("ACK");
 }
+
+static char* c_conn_cc_out_set_hf_pre(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	on/off
+	*/
+	c_server_cc_out_preamp(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_cc_out_set_attn(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	Attenuator value
+	*/
+	c_server_cc_out_alex_attn(cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
 
 static char* c_conn_make_wisdom(cJSON *params) {
 	/*
@@ -848,6 +883,60 @@ static char* c_conn_set_tx_filter(cJSON *params) {
 	** 	p1		-- 	filter high
 	*/
 	c_server_set_tx_filter_freq(0, cJSON_GetArrayItem(params, 0)->valueint, cJSON_GetArrayItem(params, 1)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_1_agc(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	AGC mode
+	*/
+	c_server_set_agc_mode(0, cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_2_agc(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	AGC mode
+	*/
+	c_server_set_agc_mode(1, cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_3_agc(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	AGC mode
+	*/
+	c_server_set_agc_mode(2, cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_1_gain(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	RX gain
+	*/
+	c_server_set_rx_gain(0, cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_2_gain(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	RX gain
+	*/
+	c_server_set_rx_gain(1, cJSON_GetArrayItem(params, 0)->valueint);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_set_rx_3_gain(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	RX gain
+	*/
+	c_server_set_rx_gain(2, cJSON_GetArrayItem(params, 0)->valueint);
 	return encode_ack_nak("ACK");
 }
 
