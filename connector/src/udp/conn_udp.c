@@ -164,7 +164,7 @@ stringToFunc funcCases[] =
 	{ "set_hf_pre",			c_conn_cc_out_set_hf_pre },
 	{ "set_attn",			c_conn_cc_out_set_attn },
 };
-#define MAX_CASES 34
+#define MAX_CASES 44
 
 // Json structures
 cJSON *root;
@@ -492,6 +492,7 @@ static char* c_conn_set_audio_route(cJSON *params) {
 	strcpy_s(channel, 10, cJSON_GetArrayItem(params, 5)->valuestring);
 	// printf("Route: %d,%s,%d,%s,%s,%s", direction, location, receiver, host_api, dev, channel);
 	c_server_set_audio_route(direction, location, receiver, host_api, dev, channel);
+	printf("c.server: Audio route configured\n");
 	return encode_ack_nak("ACK");
 }
 
@@ -940,7 +941,7 @@ static char* c_conn_set_rx_1_gain(cJSON *params) {
 	** Arguments:
 	** 	p0		-- 	RX gain
 	*/
-	c_server_set_rx_gain(0, cJSON_GetArrayItem(params, 0)->valueint);
+	c_server_set_rx_gain(0, (float)cJSON_GetArrayItem(params, 0)->valuedouble);
 	return encode_ack_nak("ACK");
 }
 
@@ -949,7 +950,7 @@ static char* c_conn_set_rx_2_gain(cJSON *params) {
 	** Arguments:
 	** 	p0		-- 	RX gain
 	*/
-	c_server_set_rx_gain(1, cJSON_GetArrayItem(params, 0)->valueint);
+	c_server_set_rx_gain(1, (float)cJSON_GetArrayItem(params, 0)->valuedouble);
 	return encode_ack_nak("ACK");
 }
 
@@ -958,7 +959,7 @@ static char* c_conn_set_rx_3_gain(cJSON *params) {
 	** Arguments:
 	** 	p0		-- 	RX gain
 	*/
-	c_server_set_rx_gain(2, cJSON_GetArrayItem(params, 0)->valueint);
+	c_server_set_rx_gain(2, (float)cJSON_GetArrayItem(params, 0)->valuedouble);
 	return encode_ack_nak("ACK");
 }
 

@@ -1149,6 +1149,7 @@ static int local_audio_setup() {
 	// Initialise the default audio routing for device 0 so we can revert after temporary changes
 	audioDefault.rx_left = ppl->local_audio.local_output[0].dsp_ch_left;
 	audioDefault.rx_right = ppl->local_audio.local_output[0].dsp_ch_right;
+	return TRUE;
 }
 
 // Set sensible values for the initial gains
