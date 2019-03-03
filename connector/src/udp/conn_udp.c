@@ -53,6 +53,8 @@ static char* c_conn_set_audio_route(cJSON *params);
 // Audio functions
 static char* c_conn_enum_audio_inputs(cJSON *params);
 static char* c_conn_enum_audio_outputs(cJSON *params);
+static char* c_conn_change_audio_outputs(cJSON *params);
+static char* c_conn_revert_audio_outputs(cJSON *params);
 // Management functions
 static char* c_conn_server_start(cJSON *params);
 static char* c_conn_server_terminate(cJSON *params);
@@ -154,6 +156,8 @@ stringToFunc funcCases[] =
 	{ "wisdom",				c_conn_make_wisdom },
 	{ "enum_inputs",		c_conn_enum_audio_inputs },
 	{ "enum_outputs",		c_conn_enum_audio_outputs },
+	{ "change_outputs",		c_conn_change_audio_outputs },
+	{ "revert_outputs",		c_conn_revert_audio_outputs },
 	{ "set_disp_period",	c_conn_set_disp_period },
 	{ "set_disp_state",		c_conn_set_disp_state },
 	{ "set_num_rx",			c_conn_set_num_rx },
@@ -694,6 +698,24 @@ static char* c_conn_enum_audio_outputs(cJSON *params) {
 		cJSON_AddItemToArray(outputs, items);
 	}
 	return (cJSON_Print(root));
+}
+
+static char* c_conn_change_audio_outputs(cJSON *params) {
+	/*
+	** Arguments:
+	** 	p0		-- 	rx
+	**	p1		--	audio-ch
+	*/
+	c_server_change_audio_outputs(cJSON_GetArrayItem(params, 0)->valueint, cJSON_GetArrayItem(params, 1)->valuestring);
+	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_revert_audio_outputs(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+	c_server_revert_audio_outputs();
+	return encode_ack_nak("ACK");
 }
 
 static char* c_conn_set_disp_period(cJSON *params) {
