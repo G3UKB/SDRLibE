@@ -28,6 +28,9 @@ bob@bobcowdery.plus.com
 // Include all server headers
 #include "../common/include.h"
 
+#define SVR_ADDR "127.0.0.1"
+//#define SVR_ADDR "192.168.1.8"
+
 //==========================================================================================
 // Local functions
 static void* udp_conn_imp(void* data);
@@ -185,7 +188,7 @@ int conn_udp_init() {
 
 	// Bind local server port
 	conn_srv_addr.sin_family = AF_INET;
-	if ((rc=inet_pton(AF_INET, "127.0.0.1", &(conn_srv_addr.sin_addr))) != 1) {
+	if ((rc=inet_pton(AF_INET, SVR_ADDR, &(conn_srv_addr.sin_addr))) != 1) {
 		if( rc == 0)
 			printf("Connector: InetPton says invalid IPv4 dotted decimal address\n");
 		else if( rc == -1 ) 
