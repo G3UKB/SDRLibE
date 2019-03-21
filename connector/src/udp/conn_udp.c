@@ -61,6 +61,7 @@ static char* c_conn_revert_audio_outputs(cJSON *params);
 // Management functions
 static char* c_conn_server_start(cJSON *params);
 static char* c_conn_server_terminate(cJSON *params);
+static char* c_conn_server_bounce(cJSON *params);
 static char* c_conn_radio_discover(cJSON *params);
 static char* c_conn_radio_start(cJSON *params);
 static char* c_conn_radio_stop(cJSON *params);
@@ -168,6 +169,7 @@ stringToFunc funcCases[] =
 	{ "set_audio_route",	c_conn_set_audio_route },
 	{ "server_start",		c_conn_server_start },
 	{ "terminate",			c_conn_server_terminate },
+	{ "bounce",				c_conn_server_bounce },
 	{ "radio_discover",		c_conn_radio_discover },
 	{ "radio_start",		c_conn_radio_start },
 	{ "radio_stop",			c_conn_radio_stop },
@@ -543,6 +545,20 @@ static char* c_conn_server_terminate(cJSON *params) {
 	** Arguments:
 	*/
 	c_server_terminate();
+}
+
+static char* c_conn_server_bounce(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+
+	c_server_terminate();
+
+	if (c_server_start())
+		return encode_ack_nak("ACK");
+	else
+		return encode_ack_nak("NAK");
+
 }
 
 static char* c_conn_radio_discover(cJSON *params) {
