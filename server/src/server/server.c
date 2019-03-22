@@ -1082,9 +1082,16 @@ static void c_audio_init() {
 // Initialise pipeline audio structures
 static void c_ppl_audio_init() {
 	int i;
-
+	
 	for (i = 0; i < ppl->args->num_rx * 2; i++) {
-		ppl->args->audio.routing.local[i].rx = -1;
+		strcpy(ppl->local_audio.local_output[i].srctype, "");
+		strcpy(ppl->local_audio.local_output[i].dev, "");
+		ppl->local_audio.local_output[i].dsp_ch_left = 0;
+		ppl->local_audio.local_output[i].dsp_ch_right = 0;
+		ppl->local_audio.local_output[i].stream_id = NULL;
+		ppl->local_audio.local_output[i].open = FALSE;
+		ppl->local_audio.local_output[i].prime = FALSE;
+		ppl->local_audio.local_output[i].rb_la_out = NULL;
 	}
 }
 
@@ -1181,7 +1188,6 @@ static int local_audio_setup() {
 					break;
 				}
 			}
-
 			if (!found) {
 				// Open the audio output channel which returns an AudioDescriptor
 				padesc = open_audio_channel(DIR_OUT, ppl->args->audio.routing.local[i].hostapi, ppl->args->audio.routing.local[i].dev);
@@ -1198,7 +1204,6 @@ static int local_audio_setup() {
 				ppl->local_audio.local_output[next_index].open = FALSE;
 				ppl->local_audio.local_output[next_index].prime = 4;
 				output_index++;
-				printf("Set up stream\n");
 			}
 			// Assign the dsp channel to the left or right or both audio output(s)
 			if (strcmp(ppl->args->audio.routing.local[i].ch, LEFT) == 0) {
