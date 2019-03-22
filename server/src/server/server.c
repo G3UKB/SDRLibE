@@ -36,6 +36,8 @@ Server processing called from the Cython layer to implement:
 #include "../common/include.h"
 
 // Local functions
+static void c_audio_init();
+static void c_ppl_audio_init();
 static void create_ring_buffers();
 static void init_pipeline_structure();
 static int local_audio_setup();
@@ -81,7 +83,7 @@ int c_server_init() {
 	// Create a broadcast socket
 	char last_error[128];           // Holder for last error
 	if ((sd = open_bc_socket()) == -1) {
-		printf("Server: Failed to create broadcast socket! [%d]", last_error);
+		printf("Server: Failed to create broadcast socket! [%d]\n", last_error);
 		return FALSE;
 	}
 
@@ -116,43 +118,9 @@ int c_server_init() {
 	pargs->general.display_width = DISPLAY_WIDTH;
 	pargs->general.av_mode = PAN_TIME_AV_LIN;
 	pargs->general.duplex = 0;
-	// Set up some default audio
-	// We can only default to HPSDR audio as we can't select local audio automatically
-	// Mic input
-	strcpy(pargs->audio.in_src, HPSDR);
-	strcpy(pargs->audio.in_hostapi, "");
-	strcpy(pargs->audio.in_dev, "");
-	strcpy(pargs->audio.out_sink, "");
-	// Audio output
-	// There are two route arrays, one for HPSDR and one for local
-	// They define which receiver output is routed where
-	// Default such that RX 1 left and right are HPSDR
-	// There are 2 possible HPSDR routes for left and right. 
 
-	// HPSDR
-	// Put both on rx 1
-	pargs->audio.routing.hpsdr[0].rx = 1;
-	// These 3 values are for compatibility, not used for HPSDR outputs
-	strcpy(pargs->audio.routing.hpsdr[0].srctype, "");
-	strcpy(pargs->audio.routing.hpsdr[0].hostapi, "");
-	strcpy(pargs->audio.routing.hpsdr[0].dev, "");
-	strcpy(pargs->audio.routing.hpsdr[0].ch, BOTH);
-	// Nothing on second channel
-	pargs->audio.routing.hpsdr[0].rx = -1;
-	strcpy(pargs->audio.routing.hpsdr[0].srctype, "");
-	strcpy(pargs->audio.routing.hpsdr[0].hostapi, "");
-	strcpy(pargs->audio.routing.hpsdr[0].dev, "");
-	strcpy(pargs->audio.routing.hpsdr[0].ch, "");
-
-	// Local
-	// Clear for MAX_RX*2 receivers as each can be a separate channel
-	for (i = 0; i < MAX_RX*2 ; i++) {
-		pargs->audio.routing.local[i].rx = -1;
-		strcpy(pargs->audio.routing.local[i].srctype, "");
-		strcpy(pargs->audio.routing.local[i].hostapi, "");
-		strcpy(pargs->audio.routing.local[i].dev, "");
-		strcpy(pargs->audio.routing.local[i].ch, "");
-	}
+	// Initialise audio structures
+	c_audio_init();
 
 	// Init the CC bytes with defaults
 	cc_out_init();
@@ -209,6 +177,46 @@ void c_server_set_display_width(int width) {
 		c_server_set_display(1, width);
 	if (pargs->num_rx >= 3)
 		c_server_set_display(2, width);
+}
+
+// Clear all audio routes
+int c_server_clear_audio_routes() {
+
+	int r;
+
+	// Stop local audio processing
+	c_server_local_audio_run(FALSE);
+	// Then shutdown the audio process
+	if (r = audio_uninit() != paNoError) {
+		printf("c.server: Error closing audio! [%d]\n", r);
+		return FALSE;
+	}
+	printf("c.server: Audio services closed\n");
+	// Then re-initialise the args structure
+	c_audio_init();
+	// and the pipelinr structure
+	c_ppl_audio_init();
+	// Now it can be re-populated and the audio restarted
+	printf("c.server: Audio routes cleared\n");
+	return TRUE;
+}
+
+// Restart all audio routes
+int c_server_restart_audio_routes() {
+
+	int r;
+
+	// NOTE: c_server_clear_audio_routes() must have been called first
+	// Then the routes re-populated using calls to c_server_set_audio_route()
+	// Now we call the initial audio setup to re-populate the pipeline structure
+	if (!local_audio_setup()) {
+		printf("c.server: Problem setting up local audio!\n");
+		return FALSE;
+	}
+	// Start local audio processing
+	c_server_local_audio_run(TRUE);
+	printf("c.server: Audio routes restarted\n");
+	return TRUE;
 }
 
 // Optional audio update, otherwsie default is HPSDR for input and output on RX 1
@@ -272,6 +280,7 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 			}
 		}
 	}
+	printf("c.server: Audio route configured\n");
 }
 
 //============================================================================================
@@ -929,6 +938,11 @@ void c_server_revert_audio_outputs() {
 	ppl->local_audio.local_output[0].dsp_ch_right = audioDefault.rx_right;
 }
 
+int c_server_local_audio_run(int runstate) {
+	// Start/stop local audio
+	return pipeline_run_local_audio(runstate);
+}
+
 //======================================================
 // FFTW wisdom (tune FFTW)
 
@@ -1020,6 +1034,60 @@ void c_server_cc_out_set_tx_freq(unsigned int freq_in_hz) {
 //============================================================================================
 // Local Functions
 
+// Initialise audio structures
+static void c_audio_init() {
+
+	int i;
+
+	// Audio inputs
+	// Set up some default audio
+	// We can only default to HPSDR audio as we can't select local audio automatically
+	// Mic input
+	strcpy(pargs->audio.in_src, HPSDR);
+	strcpy(pargs->audio.in_hostapi, "");
+	strcpy(pargs->audio.in_dev, "");
+	strcpy(pargs->audio.out_sink, "");
+
+	// Audio output
+	// There are two route arrays, one for HPSDR and one for local
+	// They define which receiver output is routed where
+	// Default such that RX 1 left and right are HPSDR
+	// There are 2 possible HPSDR routes for left and right. 
+	// HPSDR
+	// Put both on rx 1
+	pargs->audio.routing.hpsdr[0].rx = 1;
+	// These 3 values are for compatibility, not used for HPSDR outputs
+	strcpy(pargs->audio.routing.hpsdr[0].srctype, "");
+	strcpy(pargs->audio.routing.hpsdr[0].hostapi, "");
+	strcpy(pargs->audio.routing.hpsdr[0].dev, "");
+	strcpy(pargs->audio.routing.hpsdr[0].ch, BOTH);
+	// Nothing on second channel
+	pargs->audio.routing.hpsdr[0].rx = -1;
+	strcpy(pargs->audio.routing.hpsdr[0].srctype, "");
+	strcpy(pargs->audio.routing.hpsdr[0].hostapi, "");
+	strcpy(pargs->audio.routing.hpsdr[0].dev, "");
+	strcpy(pargs->audio.routing.hpsdr[0].ch, "");
+
+	// Local
+	// Clear for MAX_RX*2 receivers as each can be a separate channel
+	for (i = 0; i < MAX_RX * 2; i++) {
+		pargs->audio.routing.local[i].rx = -1;
+		strcpy(pargs->audio.routing.local[i].srctype, "");
+		strcpy(pargs->audio.routing.local[i].hostapi, "");
+		strcpy(pargs->audio.routing.local[i].dev, "");
+		strcpy(pargs->audio.routing.local[i].ch, "");
+	}
+}
+
+// Initialise pipeline audio structures
+static void c_ppl_audio_init() {
+	int i;
+
+	for (i = 0; i < ppl->args->num_rx * 2; i++) {
+		ppl->args->audio.routing.local[i].rx = -1;
+	}
+}
+
 // Create ring buffers for the IQ and Mic data streams
 static void create_ring_buffers() {
 
@@ -1053,6 +1121,7 @@ static void init_pipeline_structure() {
 	ppl = (Pipeline *)safealloc(sizeof(Pipeline), sizeof(char), "PIPELINE_STRUCT");
 	ppl->run = FALSE;
 	ppl->display_run = FALSE;
+	ppl->local_audio_run = TRUE;
 	ppl->terminate = FALSE;
 	ppl->terminating = FALSE;
 	ppl->rb_iq_in = rb_iq_in;
@@ -1076,7 +1145,6 @@ static int local_audio_setup() {
 
 	AudioDescriptor *padesc;
 	int i, j, output_index, next_index, found;
-
 	audio_init();
 	if (strcmp(ppl->args->audio.in_src, LOCAL) == 0) {
 		// We have local input defined
@@ -1130,6 +1198,7 @@ static int local_audio_setup() {
 				ppl->local_audio.local_output[next_index].open = FALSE;
 				ppl->local_audio.local_output[next_index].prime = 4;
 				output_index++;
+				printf("Set up stream\n");
 			}
 			// Assign the dsp channel to the left or right or both audio output(s)
 			if (strcmp(ppl->args->audio.routing.local[i].ch, LEFT) == 0) {

@@ -102,6 +102,7 @@ typedef struct LocalAudio {
 typedef struct Pipeline {
 	int run;
 	int display_run;
+	int local_audio_run;
 	int terminate;
 	int terminating;
 	ringb_t *rb_iq_in;
@@ -134,6 +135,8 @@ void c_server_set_window_type(int window_type);
 void c_server_set_av_mode(int mode);
 void c_server_set_display_width(int width);
 void c_server_set_audio_route(int direction, char* location, int receiver, char* host_api, char* dev, char* channel);
+int c_server_clear_audio_routes();
+int c_server_restart_audio_routes();
 int c_server_start();
 int c_server_terminate();
 int c_radio_discover();
@@ -166,6 +169,8 @@ DeviceEnumList* c_server_enum_audio_inputs();
 DeviceEnumList* c_server_enum_audio_outputs();
 void c_server_change_audio_outputs(int rx, char* audio_ch);
 void c_server_revert_audio_outputs();
+int c_server_local_audio_run(int runstate);
+int c_server_clear_audio_routes();
 // Wisdom
 void c_server_make_wisdom(char *dir);
 // CC data

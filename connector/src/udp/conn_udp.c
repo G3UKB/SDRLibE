@@ -58,10 +58,12 @@ static char* c_conn_enum_audio_inputs(cJSON *params);
 static char* c_conn_enum_audio_outputs(cJSON *params);
 static char* c_conn_change_audio_outputs(cJSON *params);
 static char* c_conn_revert_audio_outputs(cJSON *params);
+static char* c_conn_local_audio_run(cJSON *params);
+static char* c_conn_clear_audio_routes(cJSON *params);
+static char* c_conn_restart_audio_routes(cJSON *params);
 // Management functions
 static char* c_conn_server_start(cJSON *params);
 static char* c_conn_server_terminate(cJSON *params);
-static char* c_conn_server_bounce(cJSON *params);
 static char* c_conn_radio_discover(cJSON *params);
 static char* c_conn_radio_start(cJSON *params);
 static char* c_conn_radio_stop(cJSON *params);
@@ -169,7 +171,6 @@ stringToFunc funcCases[] =
 	{ "set_audio_route",	c_conn_set_audio_route },
 	{ "server_start",		c_conn_server_start },
 	{ "terminate",			c_conn_server_terminate },
-	{ "bounce",				c_conn_server_bounce },
 	{ "radio_discover",		c_conn_radio_discover },
 	{ "radio_start",		c_conn_radio_start },
 	{ "radio_stop",			c_conn_radio_stop },
@@ -178,6 +179,9 @@ stringToFunc funcCases[] =
 	{ "enum_outputs",		c_conn_enum_audio_outputs },
 	{ "change_outputs",		c_conn_change_audio_outputs },
 	{ "revert_outputs",		c_conn_revert_audio_outputs },
+	{ "local_audio_run",	c_conn_local_audio_run },
+	{ "clear_audio_routes",	c_conn_clear_audio_routes },
+	{ "restart_audio_routes", c_conn_restart_audio_routes },
 	{ "set_disp_period",	c_conn_set_disp_period },
 	{ "set_disp_state",		c_conn_set_disp_state },
 	{ "set_num_rx",			c_conn_set_num_rx },
@@ -198,7 +202,7 @@ stringToFunc funcCases[] =
 	{ "set_hpf_6_5",		c_conn_cc_out_hpf_6_5 },
 	{ "set_hpf_1_5",		c_conn_cc_out_hpf_1_5 },
 };
-#define MAX_CASES 58
+#define MAX_CASES 61
 
 // Json structures
 cJSON *root;
@@ -526,7 +530,6 @@ static char* c_conn_set_audio_route(cJSON *params) {
 	strcpy_s(channel, 10, cJSON_GetArrayItem(params, 5)->valuestring);
 	// printf("Route: %d,%s,%d,%s,%s,%s", direction, location, receiver, host_api, dev, channel);
 	c_server_set_audio_route(direction, location, receiver, host_api, dev, channel);
-	printf("c.server: Audio route configured\n");
 	return encode_ack_nak("ACK");
 }
 
@@ -545,20 +548,6 @@ static char* c_conn_server_terminate(cJSON *params) {
 	** Arguments:
 	*/
 	c_server_terminate();
-}
-
-static char* c_conn_server_bounce(cJSON *params) {
-	/*
-	** Arguments:
-	*/
-
-	c_server_terminate();
-
-	if (c_server_start())
-		return encode_ack_nak("ACK");
-	else
-		return encode_ack_nak("NAK");
-
 }
 
 static char* c_conn_radio_discover(cJSON *params) {
@@ -891,6 +880,36 @@ static char* c_conn_revert_audio_outputs(cJSON *params) {
 	*/
 	c_server_revert_audio_outputs();
 	return encode_ack_nak("ACK");
+}
+
+static char* c_conn_local_audio_run(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+	if (c_server_local_audio_run(cJSON_GetArrayItem(params, 0)->valueint))
+		return encode_ack_nak("ACK");
+	else
+		return encode_ack_nak("NAK");
+}
+
+static char* c_conn_clear_audio_routes(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+	if (c_server_clear_audio_routes())
+		return encode_ack_nak("ACK");
+	else
+		return encode_ack_nak("NAK");
+}
+
+static char* c_conn_restart_audio_routes(cJSON *params) {
+	/*
+	** Arguments:
+	*/
+	if (c_server_restart_audio_routes())
+		return encode_ack_nak("ACK");
+	else
+		return encode_ack_nak("NAK");
 }
 
 static char* c_conn_set_disp_period(cJSON *params) {

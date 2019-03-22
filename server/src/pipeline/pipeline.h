@@ -90,6 +90,7 @@ typedef struct ThreadData {
 int pipeline_init(Pipeline *td);
 int pipeline_start();
 int pipeline_run_display(int run_state);
+int pipeline_run_local_audio(int run_state);
 int pipeline_stop();
 int pipeline_terminate();
 

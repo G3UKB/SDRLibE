@@ -129,6 +129,17 @@ int pipeline_run_display(int run_state) {
 	return TRUE;
 }
 
+int pipeline_run_local_audio(int run_state) {
+	/* Stop or start local audio
+	*
+	* Arguments:
+	* 	run_state	--	TRUE is run display
+	*
+	*/
+	td->ppl->local_audio_run = run_state;
+	return TRUE;
+}
+
 int pipeline_terminate() {
 	/* Terminate pipeline thread
 	 *
@@ -214,7 +225,9 @@ static void *pipeline_imp(void *data) {
 			}
 			do_dsp(ppl, ptr);
 			//printf("do_dsp\n");
-			do_local_audio(ppl, ptr);
+			if (ppl->local_audio_run) {
+				do_local_audio(ppl, ptr);
+			}
 			//printf("do_local_audio\n");
 			do_encode(ppl, ptr);
 			//printf("do_encode\n");
