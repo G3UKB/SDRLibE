@@ -35,12 +35,26 @@ bob@bobcowdery.plus.com
 	automatically from the connector rather than expose those functions to the front-end.
 */
 
+void SignalHandler(int signal)
+{
+	printf("Here!!\n");
+	if (signal == SIGTERM) {
+		// abort signal handler code  
+		printf("Terminating...\n");
+	}
+}
+
 // Entry point
 int main() {
 
 	// Announce
 	printf("SDRLibE Connector starting...\n");
 	printf("(Press any key to exit)\n\n\n");
+
+	typedef void(*SignalHandlerPointer)(int);
+
+	SignalHandlerPointer previousHandler;
+	previousHandler = signal(SIGTERM, SignalHandler);
 
 	// First see if we need to make the wisdom file
 	c_server_make_wisdom("..\\wisdom\\");

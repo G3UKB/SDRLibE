@@ -30,6 +30,7 @@ bob@bobcowdery.plus.com
 #include "../../../server/src/common/include.h"
 
 // Connector headers
+#include <signal.h>
 #include "../common/conn_defs.h"
 #include "../main/main.h"
 #include "../udp/conn_udp.h"
