@@ -50,11 +50,8 @@ The authors can be reached by email at:
 
 #define HPSDR "HPSDR"
 #define LOCAL "Local"
-#define FLDIGI "Fldigi"
-#define CWSKIMMER "CWSkimmer"
-#define WSJT "WSJT"
-#define WSPR "WSPR"
-#define JT65HF "JT65-HF"
+#define LOCAL_AF "Local/AF"
+#define LOCAL_IQ "Local/IQ"
 
 #define IQ 0
 #define MIC 1

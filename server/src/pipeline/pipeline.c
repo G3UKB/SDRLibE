@@ -535,8 +535,7 @@ static void do_local_audio(Pipeline *ppl, Transforms *ptr) {
 		// This was stopping 1 short of completion.
 		for (j=0,k=0 ; j <= ptr->dsp_lr_sz - 2 ; j+=2,k+=4) {
 			// First convert and scale to short
-			if 	((strcmp(ppl->local_audio.local_output[i].srctype, CWSKIMMER) == 0) ||
-				(strcmp(ppl->local_audio.local_output[i].srctype, WSPR) == 0)){
+			if 	(strcmp(ppl->local_audio.local_output[i].srctype, LOCAL_IQ) == 0) {
 				// CWSkimmer and WSPR requires/can take - IQ data
 				LorI = (short)(ptr->dec_iq_data[ppl->local_audio.local_output[i].dsp_ch_left][j] * output_scale);
 				RorQ = (short)(ptr->dec_iq_data[ppl->local_audio.local_output[i].dsp_ch_right][j+1] * output_scale);
