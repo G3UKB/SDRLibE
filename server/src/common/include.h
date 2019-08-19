@@ -29,6 +29,7 @@ bob@bobcowdery.plus.com
 #define _include_h
 
 // System includes
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <stdio.h>
 #include <winsock2.h>
 #include <math.h>
