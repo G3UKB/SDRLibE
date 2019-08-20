@@ -57,7 +57,7 @@ int main() {
 	previousHandler = signal(SIGTERM, SignalHandler);
 
 	// First see if we need to make the wisdom file
-	c_server_make_wisdom("..\\wisdom\\");
+	c_server_make_wisdom("..\\..\\wisdom\\");
 
 	// Initialise Winsock 
 	WSADATA wsa;                    // Winsock

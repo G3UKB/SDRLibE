@@ -78,7 +78,7 @@ int c_server_init() {
 	*/
 
 	int i;
-
+	
 	//============================================================================================
 	// Create a broadcast socket
 	char last_error[128];           // Holder for last error
@@ -86,7 +86,7 @@ int c_server_init() {
 		printf("Server: Failed to create broadcast socket! [%d]\n", last_error);
 		return FALSE;
 	}
-
+	
 	//============================================================================================
 	// Create the args structure and set reasonable defaults
 	pargs = (Args *)safealloc(sizeof(Args), sizeof(char), "ARGS_STRUCT");
@@ -103,11 +103,13 @@ int c_server_init() {
 		// Set channel id's 0-6
 		pargs->rx[i].ch_id = i;
 	}
+	
 	// Set up display channels for MAX_RX receivers
 	for (i = 0; i < MAX_RX; i++) {
 		// Display id's are arbitary so just use 0-6
 		pargs->disp[i].ch_id = i;
 	}
+	
 	// Set up general configuration to normal values
 	pargs->general.in_rate = IN_RATE;
 	pargs->general.out_rate = OUT_RATE;
@@ -118,13 +120,13 @@ int c_server_init() {
 	pargs->general.display_width = DISPLAY_WIDTH;
 	pargs->general.av_mode = PAN_TIME_AV_LIN;
 	pargs->general.duplex = 0;
-
+	
 	// Initialise audio structures
 	c_audio_init();
-
+	
 	// Init the CC bytes with defaults
 	cc_out_init();
-
+	
 	// Done
 	c_server_initialised = TRUE;
 	printf("c.server: Server initialised\n");

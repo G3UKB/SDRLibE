@@ -248,7 +248,7 @@ unsigned char cc_out_set_bits(int target, unsigned char *bits_array, unsigned ch
 }
 
 // Update the setting
-void update_setting(cc_byte_idx, cc_array_idx, value, bit_array, bit_msk) {
+void update_setting(int cc_byte_idx, int cc_array_idx, int value, unsigned char *bit_array, unsigned char bit_msk) {
 	unsigned char b = cc_out_get_byte(cc_array_idx, cc_byte_idx);
 	unsigned char new_b = cc_out_set_bits(value, bit_array, b, bit_msk);
 	cc_out_put_byte(cc_array_idx, cc_byte_idx, new_b);
