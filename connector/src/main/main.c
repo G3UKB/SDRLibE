@@ -85,6 +85,21 @@ int main() {
 	// Run UDP interface
 	conn_udp_start();
 	
+	// Testing
+	/*
+	DeviceEnumList* audio_outputs = c_server_enum_audio_outputs();
+	
+	// Iterate the list and populate the Json structure
+	for (int i = 0; i < audio_outputs->entries; i++) {
+		// Create an object to add items to
+		printf("%s\n", audio_outputs->devices[i].name);
+		printf("%s\n", audio_outputs->devices[i].host_api);
+		printf("%d\n", audio_outputs->devices[i].index);
+		printf("%d\n", audio_outputs->devices[i].direction);
+		printf("%d\n", audio_outputs->devices[i].channels);
+	}
+	*/
+
 	getch();
 	
 	// Announce
