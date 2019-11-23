@@ -364,33 +364,35 @@ static void udpconndata(UDPConnThreadData* td) {
 			// We have a command packet
 			// Read a frame size data packet
 			rd_sz = recvfrom(sd, (char*)data_in, CONN_DATA_SZ, 0, (struct sockaddr*)&conn_cli_addr, &cli_addr_sz);
-			//char buffer[20];
-			//inet_ntop(AF_INET, &(conn_cli_addr.sin_addr), buffer, 20);
-			//printf("Connector: Client addr: %s, %d\n", buffer, conn_cli_addr.sin_port);
-			// Data is in Json encoding
-			// Data format is of the following form:
-			//	{
-			//		"cmd" : "cmd_name",
-			//		"params" : [list of command specific parameters]
-			//	}
-			// We only need to extract the cmd_name and look it up in the function pointer table then
-			// pass it to the function to unpack the parameters and call the server side function.
-			// This is not an RPC system. Calls are one way and if they fail then the client will
-			// receive an async NAK with a reason. There is no ACK response. Data that eminates from 
-			// server side, primarily display data is sent as and whan available or on a timer.
-			//
-			// Parse the incoming data
-			root = cJSON_Parse(data_in);
-			params = cJSON_GetObjectItemCaseSensitive(root, "params");
-			// Extract command name
-			strcpy_s(name, 30, cJSON_GetObjectItemCaseSensitive(root, "cmd")->valuestring);
-			// Dispatch
-			// printf("Cmd: %s\n", name);
-			for (int i = 0; i < MAX_CASES ; i++) {
-				if (strcmp(funcCases[i].str, name) == 0) {
-					char* resp = (funcCases[i].f)(params);
-					send_conn_resp(sd, (struct sockaddr*)&conn_cli_addr, resp);
-					break;
+			if (rd_sz > 0) {
+				//char buffer[20];
+				//inet_ntop(AF_INET, &(conn_cli_addr.sin_addr), buffer, 20);
+				//printf("Connector: Client addr: %s, %d\n", buffer, conn_cli_addr.sin_port);
+				// Data is in Json encoding
+				// Data format is of the following form:
+				//	{
+				//		"cmd" : "cmd_name",
+				//		"params" : [list of command specific parameters]
+				//	}
+				// We only need to extract the cmd_name and look it up in the function pointer table then
+				// pass it to the function to unpack the parameters and call the server side function.
+				// This is not an RPC system. Calls are one way and if they fail then the client will
+				// receive an async NAK with a reason. There is no ACK response. Data that eminates from 
+				// server side, primarily display data is sent as and whan available or on a timer.
+				//
+				// Parse the incoming data
+				root = cJSON_Parse(data_in);
+				params = cJSON_GetObjectItemCaseSensitive(root, "params");
+				// Extract command name
+				strcpy_s(name, 30, cJSON_GetObjectItemCaseSensitive(root, "cmd")->valuestring);
+				// Dispatch
+				// printf("Cmd: %s\n", name);
+				for (int i = 0; i < MAX_CASES; i++) {
+					if (strcmp(funcCases[i].str, name) == 0) {
+						char* resp = (funcCases[i].f)(params);
+						send_conn_resp(sd, (struct sockaddr*)&conn_cli_addr, resp);
+						break;
+					}
 				}
 			}
 		}
