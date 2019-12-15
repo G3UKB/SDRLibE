@@ -131,7 +131,10 @@ void c_server_open_display(int display, int fft_size, int win_type, int sub_span
 		pan = (float *)safealloc(1920, sizeof(float), "PAN_STRUCT");
 	}
 	
-	pan_sz = display_width;
+	if (display == 0) pan_sz_r1 = display_width;
+	else if (display == 1) pan_sz_r2 = display_width;
+	else pan_sz_r3 = display_width;
+
 	// Create the display analyzer
 	XCreateAnalyzer(
 		display,
@@ -215,7 +218,10 @@ void c_impl_server_set_display(int display_id, int fft_size, int win_type, int s
 	const int MAX_AV_FRAMES = 60;
 	const double KEEP_TIME = 0.1;
 	int max_w = fft_size + (int)min(KEEP_TIME * sample_rate, KEEP_TIME * fft_size * frame_rate);
-	pan_sz = display_width;
+	
+	if (display_id == 0) pan_sz_r1 = display_width;
+	else if (display_id == 1) pan_sz_r2 = display_width;
+	else pan_sz_r3 = display_width;
 
 	SetAnalyzer(
 		display_id,		// the disply id

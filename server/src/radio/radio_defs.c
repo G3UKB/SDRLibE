@@ -36,7 +36,9 @@ unsigned char *iq = NULL;
 unsigned char *mic = NULL;
 char *local_mic = NULL;
 float *pan = NULL;
-int pan_sz;
+int pan_sz_r1;
+int pan_sz_r2;
+int pan_sz_r3;
 int allocated = FALSE;
 char message[100];
 
