@@ -384,8 +384,11 @@ int c_server_terminate() {
 	ringb_free(rb_iq_in);
 	ringb_free(rb_mic_in);
 	ringb_free(rb_out);
+	closesocket(sd);
 
 	c_server_running = FALSE;
+	c_server_initialised = FALSE;
+	
 	return TRUE;
 }
 
@@ -767,12 +770,14 @@ int c_server_get_display_data(int display_id, void *display_data) {
 	int pan_sz;
 
 	if (display_id == 0) pan_sz = pan_sz_r1;
-	else if (display_id == 1) pan_sz = pan_sz_r2;
+	else if (display_id == 1) pan_sz = pan_sz_r1;
 	else pan_sz = pan_sz_r3;
 	
 	GetPixels(display_id, pan, &flag);
-	for (i=0 ; i<pan_sz ; i++) {
-		data[i] = pan[i];
+	if (flag) {
+		for (i = 0; i < pan_sz; i++) {
+			data[i] = pan[i];
+		}
 	}
 	return flag;
 }

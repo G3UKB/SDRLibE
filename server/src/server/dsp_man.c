@@ -256,7 +256,6 @@ void c_server_close_display(int display_id) {
 	** 	display_id 	-- the channel id as returned by open_channel()
 	**
 	*/
-
 	DestroyAnalyzer(display_id);
 
 }
