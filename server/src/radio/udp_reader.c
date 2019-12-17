@@ -191,7 +191,6 @@ static void udprecvdata(UDPReaderThreadData* td) {
 					}
 					// Decode the frame and dispatch for processing 
 					frame_decode(num_smpls, num_rx, rate, data_sz, frame_data);
-
 					// Write direct in same thread
 					write_data(sd, srv_addr);
 				}

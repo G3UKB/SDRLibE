@@ -388,6 +388,7 @@ int c_server_terminate() {
 
 	c_server_running = FALSE;
 	c_server_initialised = FALSE;
+	allocated = FALSE;
 	
 	return TRUE;
 }

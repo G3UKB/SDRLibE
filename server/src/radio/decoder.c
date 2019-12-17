@@ -129,7 +129,6 @@ void frame_decode(int n_smpls, int n_rx, int rate, int in_sz, char *ptr_in_bytes
 	// Iterate through every input byte
 	iq_index = 0;
 	mic_index = 0;
-
 	for (i = 0; i < in_sz; i++) {
 		if (state == IQ) {
 			// Processing IQ bytes

@@ -144,7 +144,7 @@ void c_server_open_display(int display, int fft_size, int win_type, int sub_span
 		sub_spans,
 		(char *)NULL
 	);
-
+	
 	if (success == 0) {
 		// Set display parameters
 		int flp[1] = { 0 };
@@ -177,6 +177,9 @@ void c_server_open_display(int display, int fft_size, int win_type, int sub_span
 			(double)0.0,	// max freq for calibration
 			max_w		// how much data to keep in the display buffers
 		);
+	}
+	else {
+		printf("c.server: Failed to open display channel!\n");
 	}
 }
 
