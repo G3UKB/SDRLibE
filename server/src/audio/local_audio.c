@@ -184,12 +184,14 @@ DeviceEnumList* enum_outputs() {
 	for( dev=0; dev<numDevices; dev++ ) {
 		deviceInfo = Pa_GetDeviceInfo(dev);
 		if ((deviceInfo->maxOutputChannels > 0) && __compatible(dev, DIR_OUT, paFloat32, sample_rate, 2)) {
-			device_enum_list->devices[index].direction = DIR_OUT;
-			device_enum_list->devices[index].index = dev;
-			strcpy(device_enum_list->devices[index].name, deviceInfo->name);
-			device_enum_list->devices[index].channels = deviceInfo->maxOutputChannels;
-			strcpy(device_enum_list->devices[index].host_api, Pa_GetHostApiInfo(deviceInfo->hostApi)->name);
-			index++;
+			if ((strstr(deviceInfo->name, "Speakers") != NULL) || (strstr(deviceInfo->name, "Line") != NULL)) {
+				device_enum_list->devices[index].direction = DIR_OUT;
+				device_enum_list->devices[index].index = dev;
+				strcpy(device_enum_list->devices[index].name, deviceInfo->name);
+				device_enum_list->devices[index].channels = deviceInfo->maxOutputChannels;
+				strcpy(device_enum_list->devices[index].host_api, Pa_GetHostApiInfo(deviceInfo->hostApi)->name);
+				index++;
+			}
 		}
 	}
 	device_enum_list->entries = index+1;
