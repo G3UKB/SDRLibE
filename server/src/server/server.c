@@ -181,110 +181,6 @@ void c_server_set_display_width(int width) {
 		c_server_set_display(2, width);
 }
 
-// Clear all audio routes
-int c_server_clear_audio_routes() {
-
-	int r;
-
-	// Stop local audio processing
-	c_server_local_audio_run(FALSE);
-	// Then shutdown the audio process
-	if (r = audio_uninit() != paNoError) {
-		printf("c.server: Error closing audio! [%d]\n", r);
-		return FALSE;
-	}
-	printf("c.server: Audio services closed\n");
-	// Then re-initialise the args structure
-	c_audio_init();
-	// and the pipelinr structure
-	c_ppl_audio_init();
-	// Now it can be re-populated and the audio restarted
-	printf("c.server: Audio routes cleared\n");
-	return TRUE;
-}
-
-// Restart all audio routes
-int c_server_restart_audio_routes() {
-
-	int r;
-
-	// NOTE: c_server_clear_audio_routes() must have been called first
-	// Then the routes re-populated using calls to c_server_set_audio_route()
-	// Now we call the initial audio setup to re-populate the pipeline structure
-	if (!local_audio_setup()) {
-		printf("c.server: Problem setting up local audio!\n");
-		return FALSE;
-	}
-	// Start local audio processing
-	c_server_local_audio_run(TRUE);
-	printf("c.server: Audio routes restarted\n");
-	return TRUE;
-}
-
-// Optional audio update, otherwsie default is HPSDR for input and output on RX 1
-// If required these must be updated before the server is started
-// This sets up a single audio route
-void c_server_set_audio_route(int direction, char* location, int receiver, char* host_api, char* dev, char* channel) {
-	/*
-	* Set an audio channel
-	*
-	* Arguments:
-	* 	direction	--	0=input, 1=output
-	*	location	--	HPSDR or LOCAL
-	*	receiver	--	receiver id 0-n
-	*	host_api	--	the audio host api string
-	*	dev			--	the audio device name
-	*	channel		--	LEFT, RIGHT, BOTH
-	*/
-	int i;
-
-	if (direction == 0) {
-		// Mic input
-		if (strcmp(location, HPSDR) == 0) {
-			strcpy(pargs->audio.in_src, HPSDR);
-			strcpy(pargs->audio.in_hostapi, "");
-			strcpy(pargs->audio.in_dev, "");
-			strcpy(pargs->audio.out_sink, "");
-
-		} else {
-			strcpy(pargs->audio.in_src, LOCAL);
-			strcpy(pargs->audio.in_hostapi, host_api);
-			strcpy(pargs->audio.in_dev, dev);
-			strcpy(pargs->audio.out_sink, channel);
-		}
-	} else {
-		// Audio output
-		// Remember that this is a DSP channel id for the receiver which is 0 based
-		if (strcmp(location, HPSDR) == 0) {
-			// HPSDR has two channels available
-			for (i = 0; i < 2; i++) {
-				if (pargs->audio.routing.hpsdr[i].rx == -1) {
-					// Found a free slot
-					pargs->audio.routing.hpsdr[i].rx = receiver-1;
-					strcpy(pargs->audio.routing.hpsdr[i].srctype, "");
-					strcpy(pargs->audio.routing.hpsdr[i].hostapi, host_api);
-					strcpy(pargs->audio.routing.hpsdr[i].dev, dev);
-					strcpy(pargs->audio.routing.hpsdr[i].ch, channel);
-					break;
-				}
-			}
-		} else {
-			for (i = 0; i < MAX_RX * 2; i++) {
-				if (pargs->audio.routing.local[i].rx == -1) {
-					// Found a free slot
-					pargs->audio.routing.local[i].rx = receiver-1;
-					strcpy(pargs->audio.routing.local[i].srctype, "");
-					strcpy(pargs->audio.routing.local[i].hostapi, host_api);
-					strcpy(pargs->audio.routing.local[i].dev, dev);
-					strcpy(pargs->audio.routing.local[i].ch, channel);
-					break;
-				}
-			}
-		}
-	}
-	printf("c.server: Audio route configured\n");
-}
-
 //============================================================================================
 // Server control operations
 
@@ -916,9 +812,11 @@ int c_server_get_wbs_data(int width, void *wbs_data) {
 //============================================================================================
 // These functions can be called and may need to be called before server initialisation
 
-// ======================================================
-// Audio enumerations
+//============================================================================================
+// Audio functions
 
+// Call enumerations at SOD to populate UI. They do not need the server runnng.
+// These are then used to select devices to set up the routes.
 DeviceEnumList* c_server_enum_audio_inputs() {
 	
 	return enum_inputs();
@@ -930,9 +828,120 @@ DeviceEnumList* c_server_enum_audio_outputs() {
 
 }
 
+//==============================================
+// This sets up a single audio route.
+// It can be called at SOD before the server is started to set all routes.
+// OR it can be called as part of c_server_clear_audio_routes()-c_server_set_audio_route()-c_server_restart_audio_routes
+// dynamically to reconfigure the audio.
+void c_server_set_audio_route(int direction, char* location, int receiver, char* host_api, char* dev, char* channel) {
+	/*
+	* Set an audio channel
+	*
+	* Arguments:
+	* 	direction	--	0=input, 1=output
+	*	location	--	HPSDR or LOCAL
+	*	receiver	--	receiver id 0-n
+	*	host_api	--	the audio host api string
+	*	dev			--	the audio device name
+	*	channel		--	LEFT, RIGHT, BOTH
+	*/
+	int i;
+
+	if (direction == 0) {
+		// Mic input
+		if (strcmp(location, HPSDR) == 0) {
+			strcpy(pargs->audio.in_src, HPSDR);
+			strcpy(pargs->audio.in_hostapi, "");
+			strcpy(pargs->audio.in_dev, "");
+			strcpy(pargs->audio.out_sink, "");
+
+		}
+		else {
+			strcpy(pargs->audio.in_src, LOCAL);
+			strcpy(pargs->audio.in_hostapi, host_api);
+			strcpy(pargs->audio.in_dev, dev);
+			strcpy(pargs->audio.out_sink, channel);
+		}
+	}
+	else {
+		// Audio output
+		// Remember that this is a DSP channel id for the receiver which is 0 based
+		if (strcmp(location, HPSDR) == 0) {
+			// HPSDR has two channels available
+			for (i = 0; i < 2; i++) {
+				if (pargs->audio.routing.hpsdr[i].rx == -1) {
+					// Found a free slot
+					pargs->audio.routing.hpsdr[i].rx = receiver - 1;
+					strcpy(pargs->audio.routing.hpsdr[i].srctype, "");
+					strcpy(pargs->audio.routing.hpsdr[i].hostapi, host_api);
+					strcpy(pargs->audio.routing.hpsdr[i].dev, dev);
+					strcpy(pargs->audio.routing.hpsdr[i].ch, channel);
+					break;
+				}
+			}
+		}
+		else {
+			for (i = 0; i < MAX_RX * 2; i++) {
+				if (pargs->audio.routing.local[i].rx == -1) {
+					// Found a free slot
+					pargs->audio.routing.local[i].rx = receiver - 1;
+					strcpy(pargs->audio.routing.local[i].srctype, "");
+					strcpy(pargs->audio.routing.local[i].hostapi, host_api);
+					strcpy(pargs->audio.routing.local[i].dev, dev);
+					strcpy(pargs->audio.routing.local[i].ch, channel);
+					break;
+				}
+			}
+		}
+	}
+	printf("c.server: Audio route configured\n");
+}
+
+// Clear all audio routes
+int c_server_clear_audio_routes() {
+
+	int r;
+
+	// Stop local audio processing
+	c_server_local_audio_run(FALSE);
+	// Then shutdown the audio process
+	if (r = audio_uninit() != paNoError) {
+		printf("c.server: Error closing audio! [%d]\n", r);
+		return FALSE;
+	}
+	printf("c.server: Audio services closed\n");
+	// Then re-initialise the args structure
+	c_audio_init();
+	// and the pipeline structure
+	c_ppl_audio_init();
+	// Now it can be re-populated and the audio restarted
+	printf("c.server: Audio routes cleared\n");
+	return TRUE;
+}
+
+// Restart all audio routes
+int c_server_restart_audio_routes() {
+
+	int r;
+
+	// NOTE: c_server_clear_audio_routes() must have been called first
+	// Then the routes re-populated using calls to c_server_set_audio_route()
+	// Now we call the initial audio setup to re-populate the pipeline structure
+	if (!local_audio_setup()) {
+		printf("c.server: Problem setting up local audio!\n");
+		return FALSE;
+	}
+	// Start local audio processing
+	c_server_local_audio_run(TRUE);
+	printf("c.server: Audio routes restarted\n");
+	return TRUE;
+}
+
+//==============================================
+// This will reassign the given channel LEFT,RIGHT,BOTH to the given receiver.
+// The device will be the first device assigned which is normally the default device.
+// An enhancement would be to allow the device to be specified.
 void c_server_change_audio_outputs(int rx, char* audio_ch) {
-	// Reassign the audio routing
-	// The given receiver will be re-routed to the given device left/right/both channel
 	if (strcmp(audio_ch, LEFT) == 0) {
 		ppl->local_audio.local_output[0].dsp_ch_left = rx;
 	}
@@ -945,16 +954,21 @@ void c_server_change_audio_outputs(int rx, char* audio_ch) {
 	}
 }
 
+// This will revert to the audio outputs to the configured receiver(s)
 void c_server_revert_audio_outputs() {
 	// Revert the audio routing
 	ppl->local_audio.local_output[0].dsp_ch_left = audioDefault.rx_left;
 	ppl->local_audio.local_output[0].dsp_ch_right = audioDefault.rx_right;
 }
 
+// Stop/start local audio while we make changes
 int c_server_local_audio_run(int runstate) {
 	// Start/stop local audio
 	return pipeline_run_local_audio(runstate);
 }
+
+//============================================================================================
+// These functions can be called and may need to be called before server initialisation
 
 //======================================================
 // FFTW wisdom (tune FFTW)
