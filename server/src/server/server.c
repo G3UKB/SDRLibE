@@ -901,9 +901,10 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 int c_server_clear_audio_routes() {
 
 	int r;
-
+	
 	// Stop local audio processing
 	c_server_local_audio_run(FALSE);
+
 	// Then shutdown the audio process
 	if (r = audio_uninit() != paNoError) {
 		printf("c.server: Error closing audio! [%d]\n", r);
@@ -916,6 +917,7 @@ int c_server_clear_audio_routes() {
 	c_ppl_audio_init();
 	// Now it can be re-populated and the audio restarted
 	printf("c.server: Audio routes cleared\n");
+	
 	return TRUE;
 }
 
