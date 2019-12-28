@@ -902,8 +902,10 @@ int c_server_clear_audio_routes() {
 
 	int r;
 	
-	// Stop local audio processing
-	c_server_local_audio_run(FALSE);
+	if (c_server_running) {
+		// Stop local audio processing
+		c_server_local_audio_run(FALSE);
+	}
 
 	// Then shutdown the audio process
 	if (r = audio_uninit() != paNoError) {
@@ -911,10 +913,15 @@ int c_server_clear_audio_routes() {
 		return FALSE;
 	}
 	printf("c.server: Audio services closed\n");
+
 	// Then re-initialise the args structure
 	c_audio_init();
-	// and the pipeline structure
-	c_ppl_audio_init();
+
+	if (c_server_running) {
+		// (re)init the pipeline audio structure
+		c_ppl_audio_init();
+	}
+
 	// Now it can be re-populated and the audio restarted
 	printf("c.server: Audio routes cleared\n");
 	
@@ -926,15 +933,17 @@ int c_server_restart_audio_routes() {
 
 	int r;
 
-	// NOTE: c_server_clear_audio_routes() must have been called first
-	// Then the routes re-populated using calls to c_server_set_audio_route()
-	// Now we call the initial audio setup to re-populate the pipeline structure
-	if (!local_audio_setup()) {
-		printf("c.server: Problem setting up local audio!\n");
-		return FALSE;
+	if (c_server_running) {
+		// NOTE: c_server_clear_audio_routes() must have been called first
+		// Then the routes re-populated using calls to c_server_set_audio_route()
+		// Now we call the initial audio setup to re-populate the pipeline structure
+		if (!local_audio_setup()) {
+			printf("c.server: Problem setting up local audio!\n");
+			return FALSE;
+		}
+		// Start local audio processing
+		c_server_local_audio_run(TRUE);
 	}
-	// Start local audio processing
-	c_server_local_audio_run(TRUE);
 	printf("c.server: Audio routes restarted\n");
 	return TRUE;
 }

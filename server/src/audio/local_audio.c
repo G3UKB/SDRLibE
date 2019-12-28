@@ -77,29 +77,28 @@ PaErrorCode audio_uninit() {
 	 */
 
 	int i;
-	int r = TRUE;
-
+	int r = paNoError;
 
 	if (initialised) {
-	// Terminate streams
+		// Terminate streams
 
-	for (i=0 ; i < MAX_RX + MAX_TX ; i++) {
-		if (user_data[i] != (UserData *)NULL) {
-			Pa_CloseStream(user_data[i]->stream);
-			ringb_free(user_data[i]->rb);
+		for (i=0 ; i < MAX_RX + MAX_TX ; i++) {
+			if (user_data[i] != (UserData *)NULL) {
+				Pa_CloseStream(user_data[i]->stream);
+				ringb_free(user_data[i]->rb);
+			}
+			if (audio_desc[i] != (AudioDescriptor*)NULL) {
+				safefree((char*)audio_desc[i]);
+			}
 		}
-		if (audio_desc[i] != (AudioDescriptor*)NULL) {
-			safefree((char*)audio_desc[i]);
+		if (device_enum_list != NULL) {
+			safefree((char*)device_enum_list);
 		}
-	}
-	if (device_enum_list != NULL) {
-		safefree((char*)device_enum_list);
-	}
-	stream_id = 0;
+		stream_id = 0;
 
-	// Terminate portaudio
-	r = Pa_Terminate();
-	initialised = FALSE;
+		// Terminate portaudio
+		r = Pa_Terminate();
+		initialised = FALSE;
 	}
 	return r;
 }
