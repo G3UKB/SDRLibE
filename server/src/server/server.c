@@ -845,6 +845,7 @@ void c_server_set_audio_route(int direction, char* location, int receiver, char*
 	*	dev			--	the audio device name
 	*	channel		--	LEFT, RIGHT, BOTH
 	*/
+	printf("%d,%s,%d,%s,%s,%s\n", direction, location, receiver, host_api, dev, channel);
 	int i;
 
 	if (direction == 0) {
