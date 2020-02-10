@@ -28,6 +28,8 @@ The authors can be reached by email at:
 #ifndef _defs_h
 #define _defs_h
 
+#define HAVE_STRUCT_TIMESPEC
+
 //#ifdef BUILD_DLL
     #define DLL_EXPORT __declspec(dllexport)
 //#else
