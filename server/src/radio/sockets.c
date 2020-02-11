@@ -34,18 +34,19 @@ int open_bc_socket() {
 	struct timeval tv;
 	tv.tv_sec = 4;
 	tv.tv_usec = 0;
-
+	
 	// Create socket
 	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sd<0) {
+		printf("Failed to create socket [%d]\n", WSAGetLastError());
 		return -1;
 	}
-
+	
 	// Set to broadcast
 	if (setsockopt(sd, SOL_SOCKET, SO_BROADCAST, (const char*)&broadcast, sizeof broadcast) == -1) {
 		return -1;
 	}
-
+	
 	// Set receive timeout
 	if (setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, (const const char*)&tv, sizeof tv) == -1) {
 		printf("Failed to set option SO_RCVTIMEO!\n");
