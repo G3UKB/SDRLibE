@@ -104,7 +104,7 @@ void *udp_reader_imp(void* data){
     // Get our thread parameters
 	UDPReaderThreadData* td = (UDPReaderThreadData*)data;
 
-    printf("Started UDP reader thread\n");
+    printf("c.server: Started UDP reader thread\n");
 
 	while (!td->terminate) {
 		if (td->run && !td->terminate) {
@@ -116,7 +116,7 @@ void *udp_reader_imp(void* data){
 		}
 	}
 
-    printf("UDP Reader thread exiting...\n");
+    printf("c.server: UDP Reader thread exiting...\n");
     return NULL;
 }
 
