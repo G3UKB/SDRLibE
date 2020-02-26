@@ -200,13 +200,13 @@ int c_server_start() {
 	 * Arguments:
 	 *
 	 */
-
+	
 	// Can't continue unless we are initialised
 	if (!c_server_initialised) {
 		printf("c.server: Please initialise server first!\n");
 		return FALSE;
 	}
-
+	
 	//==============================================================
 	// Finish initialisation
 	create_ring_buffers();
@@ -220,7 +220,6 @@ int c_server_start() {
 	create_dsp_channels();
 	create_display_channels();
 	set_cc_data();
-
 	// Revert to a normal socket with larger buffers
 	revert_sd(sd);
 	// Init the UDP reader
@@ -1309,7 +1308,7 @@ static void create_dsp_channels() {
 		SetChannelState(pargs->rx[ch].ch_id, CH_STATE_START, CH_TRANSITION_WAIT);
 	}
 	// TX channel
-	c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
+	//c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
 }
 
 // Create a display channel for each active receiver
