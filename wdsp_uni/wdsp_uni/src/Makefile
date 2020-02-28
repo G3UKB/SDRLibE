@@ -3,7 +3,9 @@ CLEANEXTS   = o a
 
 # Specify the target file and the install directory
 OUTPUTFILE  = wdsp_uni.a
-INSTALLDIR  = ./Linux
+INSTALLDIR  = ../Linux
+INCLUDES = fftw and pthreads
+DEFINES = linux
 
 # Default target
 .PHONY: all
@@ -17,6 +19,7 @@ $(OUTPUTFILE): *.o
 # No rule to build john.o, paul.o, and johnpaul.o from .cpp 
 # files is required; this is handled by make's database of
 # implicit rules
+Rule needed to add includes and defines
 
 .PHONY: install
 install:

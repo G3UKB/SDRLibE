@@ -46,7 +46,6 @@ warren@wpratt.com
 #endif
 #include <math.h>
 #include <time.h>
-// *RAC*
 #include "fftw/fftw3.h"
 
 #include "amd.h"
