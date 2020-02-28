@@ -20,8 +20,8 @@ all: $(OUTPUTFILE)
 
 # Build wdsp_uni.a from *.o
 $(OUTPUTFILE): *.o
-    ar ru $@ $^
-    ranlib $@
+	ar ru $@ $^
+	ranlib $@
 
 # No rule to build john.o, paul.o, and johnpaul.o from .cpp 
 # files is required; this is handled by make's database of
@@ -33,12 +33,12 @@ compile: *.o
 
 .PHONY: install
 install:
-    mkdir -p $(INSTALLDIR)
-    cp -p $(OUTPUTFILE) $(INSTALLDIR)
+	mkdir -p $(INSTALLDIR)
+	cp -p $(OUTPUTFILE) $(INSTALLDIR)
 
 .PHONY: clean 
 clean:
-    for file in $(CLEANEXTS); do rm -f *.$$file; done
+	for file in $(CLEANEXTS); do rm -f *.$$file; done
 
 # Indicate dependencies of .ccp files on .h files
 *.o: comm.h
