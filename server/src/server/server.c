@@ -81,12 +81,14 @@ int c_server_init() {
 	char last_error[128];           // Holder for last error
 
 	//============================================================================================
-	// Initialise Winsock 
+	// Initialise Winsock
+#ifndef linux
 	WSADATA wsa;                    // Winsock
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
 		printf("Server: Failed to initialise winsock!\n");
 		exit(-1);
 	}
+#endif
 
 	//============================================================================================
 	// Create a broadcast socket

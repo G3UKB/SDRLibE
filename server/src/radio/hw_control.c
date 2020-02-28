@@ -46,11 +46,18 @@ int do_discover(struct sockaddr_in *srv_addr, int sd) {
 	msg[1] = 0xFE;
 	msg[2] = 0x02;
 
+#ifdef linux
+	memset(&bcAddr, '\0', sizeof(struct sockaddr_in));
+	bcAddr.sin_family = AF_INET;
+	bcAddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+	bcAddr.sin_port = htons(REMOTE_SERVER_PORT);
+#else
 	// Set BC address
 	memset((char *)&bcAddr, 0, sizeof(bcAddr));
 	bcAddr.sin_family = AF_INET;
 	bcAddr.sin_addr.S_un.S_addr = inet_addr("255.255.255.255");
 	bcAddr.sin_port = htons(REMOTE_SERVER_PORT);
+#endif
 
 	// Dispatch
 	if (sendto(sd, (const char*)msg, MAX_MSG, 0, (const struct sockaddr*) &bcAddr, sizeof(bcAddr)) == -1) {

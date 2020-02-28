@@ -29,23 +29,36 @@ bob@bobcowdery.plus.com
 #define _include_h
 
 // System includes
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <stdio.h>
-#include <winsock2.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <time.h>
-#include <ws2tcpip.h>
-#include <Inaddr.h>
 
 #define HAVE_STRUCT_TIMESPEC
 
+#if defined(linux)
+	#include <sys/socket.h> 
+	#include <arpa/inet.h> 
+	#include <netinet/in.h> 
+#else
+	#define _WINSOCK_DEPRECATED_NO_WARNINGS
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
+	#include <Inaddr.h>
+#endif
+
 // Libs
-#include "../../../../libs/pthreads/include/pthread.h"
-#include "../../../../libs/fftw/fftw3.h"
-#include "../../../../libs/portaudio/include/portaudio.h"
+#if defined (linux)
+	#include <pthread.h>
+	#include <fftw3.h>
+	#include <portaudio.h>
+#else
+	#include "../../../../libs/pthreads/include/pthread.h"
+	#include "../../../../libs/fftw/fftw3.h"
+	#include "../../../../libs/portaudio/include/portaudio.h"
+#endif
 
 // Application includes
 // Helpers
