@@ -27,6 +27,7 @@ warren@wpratt.com
 #if defined(linux) || defined(__APPLE__)
 #include <stdlib.h>
 #include <pthread.h>
+#include <fftw3.h>
 #include <semaphore.h>
 #include <string.h>
 #include "linux_port.h"
@@ -43,10 +44,11 @@ warren@wpratt.com
 #include <Windows.h>
 #include <process.h>
 #include <intrin.h>
+#include "fftw/fftw3.h"
 #endif
 #include <math.h>
 #include <time.h>
-#include "fftw/fftw3.h"
+//#include "fftw/fftw3.h"
 
 #include "amd.h"
 #include "ammod.h"
