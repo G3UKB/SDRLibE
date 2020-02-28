@@ -149,11 +149,19 @@ static void udprecvdata(UDPReaderThreadData* td) {
 			printf("udp_reader: Timeout\n");
 			continue;
 		}
+#ifdef linux
+		else if (sel_result == SO_ERROR) {
+			// Problem
+			sleep(1);
+			//send_message("c.server", "Error in read:"); 
+		}
+#else
 		else if (sel_result == SOCKET_ERROR) {
 			// Problem
 			Sleep(5);
 			//send_message("c.server", "Error in read:"); 
 		}
+#endif
 		else {
 			// Read a frame size data packet
 			n = recvfrom(sd, (char*)frame, FRAME_SZ, 0, (struct sockaddr*)srv_addr, &addr_sz);
