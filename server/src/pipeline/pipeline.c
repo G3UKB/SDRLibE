@@ -452,8 +452,9 @@ static void do_display(Pipeline *ppl, Transforms *ptr) {
 		for (j=0 ; j < ppl->args->general.iq_blk_sz*2 ; j++) {
 			f_display[j] = (float)ptr->dec_iq_data[i][j];
 		}
-		// *RAC*
+		// RAC - Windows only version
 		//Spectrum2(disp_id, 0, 0, f_display);
+		// RAC - Universal version
 		// Added run param at start, set to 1?
 		Spectrum2(1, disp_id, 0, 0, f_display);
 	}
@@ -494,9 +495,7 @@ static void do_dsp(Pipeline *ppl, Transforms *ptr) {
 	}
 
 	// Do TX DSP
-	/* * RAC * get rid of TX as always goes in here regardless.
 	if (ppl->args->num_tx > 0) {
-		printf("TX\n");
 		//fexchange0(ppl->args->tx[0].ch_id, ptr->dec_mic_data, ptr->dsp_iq_data, &error);
 		// Limit and apply rf drive factor
 		for (j=0 ; j < ptr->dsp_iq_sz ; j++) {
@@ -515,7 +514,6 @@ static void do_dsp(Pipeline *ppl, Transforms *ptr) {
 		// Zero the IQ data
 		memset((char *)ptr->dsp_iq_data, 0, ptr->dsp_iq_sz * sizeof(double));
 	}
-	*/
 }
 
 static void do_local_audio(Pipeline *ppl, Transforms *ptr) {

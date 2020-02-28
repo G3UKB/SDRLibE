@@ -547,12 +547,13 @@ void xrxa (int channel)
 	xeqp (rxa[channel].eqp.p);
 	xanf (rxa[channel].anf.p, 0);
 	xanr (rxa[channel].anr.p, 0);
-	// *RAC* NR hangs!!
+	// *RAC* NR hangs with this universal version!!
 	//xemnr (rxa[channel].emnr.p, 0);
 	xbandpass (rxa[channel].bp1.p, 0);
 	xwcpagc (rxa[channel].agc.p);
 	xanf (rxa[channel].anf.p, 1);
 	xanr (rxa[channel].anr.p, 1);
+	// *RAC* NR hangs with this universal version!!
 	//xemnr (rxa[channel].emnr.p, 1);
 	xbandpass (rxa[channel].bp1.p, 1);
 	xmeter (rxa[channel].agcmeter.p);

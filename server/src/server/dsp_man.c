@@ -79,11 +79,11 @@ void c_server_open_channel(int ch_type, int channel, int iq_size, int mic_size, 
 	}
 	// Set the internal rate to the input samplerate
 	dsp_rate = in_rate;
-	// *RAC*
+	// RAC - For windpws only version
 	//OpenChannel(channel, input_sz, input_sz, in_rate, dsp_rate, out_rate, ch_type, 0, tdelayup, tslewup, tdelaydown, tslewdown);
+	// RAC - For universal version
 	// Added BFO as last param, don't know what it does.
 	OpenChannel(channel, input_sz, input_sz, in_rate, dsp_rate, out_rate, ch_type, 0, tdelayup, tslewup, tdelaydown, tslewdown, 0);
-	// *RAC*
 }
 
 void c_server_close_channel(int channel) {
@@ -157,11 +157,10 @@ void c_server_open_display(int display, int fft_size, int win_type, int sub_span
 		const int MAX_AV_FRAMES = 60;
 		const double KEEP_TIME = 0.1;
 		int max_w = fft_size + (int)min(KEEP_TIME * sample_rate, KEEP_TIME * fft_size * frame_rate);
+		// RAC - Windows only version
+		/*
 		SetAnalyzer(
 			display,	// the disply id
-			// *RAC*
-			1,			// Pixel output ident??
-			// *RAC
 			1,			// no of LO freq, 1 for non-SA use
 			1,			// complex data input
 			flp,		// single value for non-SA use
@@ -175,17 +174,32 @@ void c_server_open_display(int display, int fft_size, int win_type, int sub_span
 			0,			// no of bins to clip from high end of span (zoom)
 			display_width,	// no of pixel values to return
 			sub_spans,		// no of sub-spans to concatenate to form a complete span
-			// *RAC*
-			// Same down to here except for pixel output
-
-			// These are missing from latest code
-			//average_mode,	// select algorithm for averaging
-			//over_frames,	// number of frames to average over
-			//(double)0.0,	// not sure how to use this
-			
-
-			// *RAC*
-			// Same below
+			average_mode,	// select algorithm for averaging
+			over_frames,	// number of frames to average over
+			(double)0.0,	// not sure how to use this
+			0,				// no calibration in use
+			(double)0.0,	// min freq for calibration
+			(double)0.0,	// max freq for calibration
+			max_w		// how much data to keep in the display buffers
+		);
+		*/
+		// RAC - Universal version
+		SetAnalyzer(
+			display,	// the disply id
+			1,			// Pixel output ident??
+			1,			// no of LO freq, 1 for non-SA use
+			1,			// complex data input
+			flp,		// single value for non-SA use
+			fft_size,		// actual fft size same as max fft size for now
+			in_sz,		// no input samples per call
+			win_type,		// window type
+			14.0,			// window shaping function, 14 is recommended
+			overlap,		// no of samples to use from previous frame
+			clp,		// no of bins to clip off each side of the sub-span
+			0,			// no of bins to clip from low end of span (zoom)
+			0,			// no of bins to clip from high end of span (zoom)
+			display_width,	// no of pixel values to return
+			sub_spans,		// no of sub-spans to concatenate to form a complete span
 			0,				// no calibration in use
 			(double)0.0,	// min freq for calibration
 			(double)0.0,	// max freq for calibration
@@ -224,7 +238,7 @@ void c_impl_server_set_display(int display_id, int fft_size, int win_type, int s
 	*/
 
 	// There are minimal parameters passed in to make the interface as easy as possible.
-	// This may not give enough flexibility so could be extended ion the future. for now we
+	// This may not give enough flexibility so could be extended in the future. for now we
 	// make up the rest
 
 	// *RAC* this is wrong, fix
@@ -241,7 +255,8 @@ void c_impl_server_set_display(int display_id, int fft_size, int win_type, int s
 	if (display_id == 0) pan_sz_r1 = display_width;
 	else if (display_id == 1) pan_sz_r2 = display_width;
 	else pan_sz_r3 = display_width;
-
+	// RAC - Windows only version
+	/*
 	SetAnalyzer(
 		display_id,		// the disply id
 		1,			// no of LO freq, 1 for non-SA use
@@ -264,6 +279,30 @@ void c_impl_server_set_display(int display_id, int fft_size, int win_type, int s
 		(double)0.0,		// min freq for calibration
 		(double)0.0,		// max freq for calibration
 		max_w			// how much data to keep in the display buffers
+	);
+	*/
+
+	// RAC - Universal version
+	SetAnalyzer(
+		display_id,	// the disply id
+		1,			// Pixel output ident??
+		1,			// no of LO freq, 1 for non-SA use
+		1,			// complex data input
+		flp,		// single value for non-SA use
+		fft_size,		// actual fft size same as max fft size for now
+		in_sz,		// no input samples per call
+		win_type,		// window type
+		14.0,			// window shaping function, 14 is recommended
+		overlap,		// no of samples to use from previous frame
+		clp,		// no of bins to clip off each side of the sub-span
+		0,			// no of bins to clip from low end of span (zoom)
+		0,			// no of bins to clip from high end of span (zoom)
+		display_width,	// no of pixel values to return
+		sub_spans,		// no of sub-spans to concatenate to form a complete span
+		0,				// no calibration in use
+		(double)0.0,	// min freq for calibration
+		(double)0.0,	// max freq for calibration
+		max_w		// how much data to keep in the display buffers
 	);
 }
 

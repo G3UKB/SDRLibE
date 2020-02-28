@@ -1308,7 +1308,7 @@ static void create_dsp_channels() {
 		SetChannelState(pargs->rx[ch].ch_id, CH_STATE_START, CH_TRANSITION_WAIT);
 	}
 	// TX channel
-	//c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
+	c_server_open_channel(CH_TX, pargs->tx->ch_id, pargs->general.iq_blk_sz, pargs->general.mic_blk_sz, pargs->general.in_rate, pargs->general.out_rate, 0, 0, 0, 0);
 }
 
 // Create a display channel for each active receiver

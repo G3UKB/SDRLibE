@@ -72,11 +72,11 @@ bob@bobcowdery.plus.com
 #include "../radio/encoder.h"
 #include "../radio/decoder.h"
 // WDSP
-// *RAC*
+// RAC - For windows only version
 //#include "../../../wdsp_win/src/channel.h"
 //#include "../../../wdsp_win/src/wisdom.h"
 //#include "../../../wdsp_win/src/bandpass.h"
-
+// RAC - For universal version
 #include "../../../wdsp_uni/wdsp_uni/src/channel.h"
 #include "../../../wdsp_uni/wdsp_uni/src/wisdom.h"
 #include "../../../wdsp_uni/wdsp_uni/src/bandpass.h"
