@@ -1154,7 +1154,7 @@ static void create_ring_buffers() {
 	// Create the input ring which accommodates enough samples for 8x DSP block size per receiver
 	// at 6 bytes per sample. The size must then be rounded up to the next power of 2 as required
 	// by the ring buffer.
-	iq_ring_sz = powf(2, ceil(log(pargs->num_rx * pargs->general.iq_blk_sz * 6 * 8) / log(2)));
+	iq_ring_sz = powf(2, ceilf(log(pargs->num_rx * pargs->general.iq_blk_sz * 6 * 8) / log(2)));
 	rb_iq_in = ringb_create(iq_ring_sz);
 	// Mic input is similar except 2 bytes per sample
 	// Note, even if there are no TX channels we still need to allocate a ring buffer as the input data
@@ -1163,7 +1163,7 @@ static void create_ring_buffers() {
 		num_tx = 1;
 	else
 		num_tx = pargs->num_tx;
-	mic_ring_sz = powf(2, ceil(log(num_tx * pargs->general.mic_blk_sz * 2 * 8) / log(2)));
+	mic_ring_sz = powf(2, ceilf(log(num_tx * pargs->general.mic_blk_sz * 2 * 8) / log(2)));
 	rb_mic_in = ringb_create(mic_ring_sz);
 
 	// At worst (48K) output rate == input rate, otherwise the output rate is lower
@@ -1361,7 +1361,7 @@ static void hanning_window(int size) {
 	int midn = size / 2;
 
 	for (i = 0, j = size - 1, angle = 0.0F; i <= midn; i++, j--, angle += freq) {
-		wbs_window[j] = (wbs_window[i] = 0.5F - 0.5F * (float)cos(angle));
+		wbs_window[j] = (wbs_window[i] = 0.5F - 0.5F * cosf(angle));
 		//printf("%d:%f ", j, wbs_window[j]);
 	}
 }

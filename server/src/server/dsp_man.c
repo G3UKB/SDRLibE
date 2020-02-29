@@ -151,7 +151,7 @@ void c_server_open_display(int display, int fft_size, int win_type, int sub_span
 	if (success == 0) {
 		// Set display parameters
 		int flp[1] = { 0 };
-		int overlap = (int)max(0.0, ceil(fft_size - (double)sample_rate / (double)frame_rate));
+		int overlap = (int)max(0.0, ceilf(fft_size - (double)sample_rate / (double)frame_rate));
 		const double CLIP_FRACTION = 0.17;
 		int clp = (int)floorf(CLIP_FRACTION * fft_size);
 		const int MAX_AV_FRAMES = 60;
@@ -245,7 +245,7 @@ void c_impl_server_set_display(int display_id, int fft_size, int win_type, int s
 
 	// Set display parameters
 	int flp[1] = { 0 };
-	int overlap = (int)max(0.0, ceil(fft_size - (double)sample_rate / (double)frame_rate));
+	int overlap = (int)max(0.0, ceilf(fft_size - (double)sample_rate / (double)frame_rate));
 	const double CLIP_FRACTION = 0.017;
 	int clp = (int)floorf(CLIP_FRACTION * fft_size);
 	const int MAX_AV_FRAMES = 60;
