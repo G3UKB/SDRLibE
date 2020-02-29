@@ -5,7 +5,7 @@ CC = gcc
 CLEANEXTS = o a 
 
 # Specify the target file and the install directory
-OUTPUTFILE  = SDRLibE.a
+OUTPUTFILE  = libSDRLibE.a
 INSTALLDIR  = ../Linux
 
 # Default target

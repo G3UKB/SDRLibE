@@ -5,7 +5,7 @@ CC = gcc
 CLEANEXTS = o a 
 
 # Specify the target file and the install directory
-OUTPUTFILE  = wdsp_uni.a
+OUTPUTFILE  = libwdsp_uni.a
 INSTALLDIR  = ../Linux
 
 # Default target
