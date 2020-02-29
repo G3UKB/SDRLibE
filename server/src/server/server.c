@@ -713,7 +713,7 @@ void c_server_process_wbs_frame(char *ptr_in_bytes) {
 
     // Step 1 -
     //  Calculate scale factor
-    float scale_in = (float)(1.0 / pow(2, 15));
+    float scale_in = (float)(1.0 / powf(2, 15));
 
     // Step 2 -
     //  Convert buffer to an float array of real values, scaling each value
@@ -751,10 +751,10 @@ void c_server_process_wbs_frame(char *ptr_in_bytes) {
     //  Calculate terms and flip/reorder (as FFT reverses data)
     for (i = 0; i < blocksize; i++) {
         wbs_results[topsize - i] =
-            (float)(10.0 * log10(get_pwr_wbs(i + blocksize) + 1e-180) + wbs_correction);
+            (float)(10.0 * log10f(get_pwr_wbs(i + blocksize) + 1e-180) + wbs_correction);
 
         wbs_results[blocksize - i] =
-            (float)(10.0 * log10(get_pwr_wbs(i) + 1e-180) + wbs_correction);
+            (float)(10.0 * log10f(get_pwr_wbs(i) + 1e-180) + wbs_correction);
     }
 
     // Step 7
@@ -1154,7 +1154,7 @@ static void create_ring_buffers() {
 	// Create the input ring which accommodates enough samples for 8x DSP block size per receiver
 	// at 6 bytes per sample. The size must then be rounded up to the next power of 2 as required
 	// by the ring buffer.
-	iq_ring_sz = pow(2, ceil(log(pargs->num_rx * pargs->general.iq_blk_sz * 6 * 8) / log(2)));
+	iq_ring_sz = powf(2, ceil(log(pargs->num_rx * pargs->general.iq_blk_sz * 6 * 8) / log(2)));
 	rb_iq_in = ringb_create(iq_ring_sz);
 	// Mic input is similar except 2 bytes per sample
 	// Note, even if there are no TX channels we still need to allocate a ring buffer as the input data
@@ -1163,7 +1163,7 @@ static void create_ring_buffers() {
 		num_tx = 1;
 	else
 		num_tx = pargs->num_tx;
-	mic_ring_sz = pow(2, ceil(log(num_tx * pargs->general.mic_blk_sz * 2 * 8) / log(2)));
+	mic_ring_sz = powf(2, ceil(log(num_tx * pargs->general.mic_blk_sz * 2 * 8) / log(2)));
 	rb_mic_in = ringb_create(mic_ring_sz);
 
 	// At worst (48K) output rate == input rate, otherwise the output rate is lower

@@ -153,7 +153,7 @@ void c_server_open_display(int display, int fft_size, int win_type, int sub_span
 		int flp[1] = { 0 };
 		int overlap = (int)max(0.0, ceil(fft_size - (double)sample_rate / (double)frame_rate));
 		const double CLIP_FRACTION = 0.17;
-		int clp = (int)floor(CLIP_FRACTION * fft_size);
+		int clp = (int)floorf(CLIP_FRACTION * fft_size);
 		const int MAX_AV_FRAMES = 60;
 		const double KEEP_TIME = 0.1;
 		int max_w = fft_size + (int)min(KEEP_TIME * sample_rate, KEEP_TIME * fft_size * frame_rate);
@@ -247,7 +247,7 @@ void c_impl_server_set_display(int display_id, int fft_size, int win_type, int s
 	int flp[1] = { 0 };
 	int overlap = (int)max(0.0, ceil(fft_size - (double)sample_rate / (double)frame_rate));
 	const double CLIP_FRACTION = 0.017;
-	int clp = (int)floor(CLIP_FRACTION * fft_size);
+	int clp = (int)floorf(CLIP_FRACTION * fft_size);
 	const int MAX_AV_FRAMES = 60;
 	const double KEEP_TIME = 0.1;
 	int max_w = fft_size + (int)min(KEEP_TIME * sample_rate, KEEP_TIME * fft_size * frame_rate);
