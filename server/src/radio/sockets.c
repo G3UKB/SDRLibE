@@ -38,7 +38,11 @@ int open_bc_socket() {
 	// Create socket
 	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sd<0) {
+#ifdef linux
+		printf("Failed to create socket!\n");
+#else
 		printf("Failed to create socket [%d]\n", WSAGetLastError());
+#endif
 		return -1;
 	}
 	

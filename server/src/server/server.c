@@ -289,8 +289,11 @@ int c_server_terminate() {
 	ringb_free(rb_iq_in);
 	ringb_free(rb_mic_in);
 	ringb_free(rb_out);
+#ifdef linux
+	close(sd);
+#else
 	closesocket(sd);
-
+#endif
 	c_server_running = FALSE;
 	c_server_initialised = FALSE;
 	allocated = FALSE;
