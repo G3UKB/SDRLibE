@@ -43,6 +43,7 @@ int open_bc_socket() {
 #else
 		printf("Failed to create socket [%d]\n", WSAGetLastError());
 #endif
+
 		return -1;
 	}
 	
