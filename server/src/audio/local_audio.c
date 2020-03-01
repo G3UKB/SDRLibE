@@ -183,7 +183,13 @@ DeviceEnumList* enum_outputs() {
 	for( dev=0; dev<numDevices; dev++ ) {
 		deviceInfo = Pa_GetDeviceInfo(dev);
 		if ((deviceInfo->maxOutputChannels > 0) && __compatible(dev, DIR_OUT, paFloat32, sample_rate, 2)) {
+			// For now we stick to looking for devices on Windows which are Speakers on Line outputs.
+			// For Linux/RPi we just look for ALSA host API devices
+#ifdef linux
+			if ((strstr(deviceInfo->hostApi, "ALSA") != NULL) {
+#else
 			if ((strstr(deviceInfo->name, "Speakers") != NULL) || (strstr(deviceInfo->name, "Line") != NULL)) {
+#endif
 				device_enum_list->devices[index].direction = DIR_OUT;
 				device_enum_list->devices[index].index = dev;
 				strcpy(device_enum_list->devices[index].name, deviceInfo->name);
