@@ -144,11 +144,19 @@ static void udprecvdata(UDPReaderThreadData* td) {
 	while (td->run && !td->terminate) {
 		// Wait for data available
 		sel_result = select(0, &read_fd, NULL, NULL, &tv);
+#ifdef linux
+		if (sel_result == -1) {
+			// Error
+			printf("udp_reader: Error\n");
+			continue;
+		}
+#else
 		if (sel_result == 0) {
 			// Timeout
 			printf("udp_reader: Timeout\n");
 			continue;
 		}
+#endif
 #ifdef linux
 		else if (sel_result == SO_ERROR) {
 			// Problem
