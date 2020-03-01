@@ -186,7 +186,7 @@ DeviceEnumList* enum_outputs() {
 			// For now we stick to looking for devices on Windows which are Speakers on Line outputs.
 			// For Linux/RPi we just look for ALSA host API devices
 #ifdef linux
-			if (strstr(deviceInfo->hostApi, "ALSA") != NULL) {
+			if (strstr(Pa_GetHostApiInfo(deviceInfo->hostApi)->name, "ALSA") != NULL) {
 #else
 			if ((strstr(deviceInfo->name, "Speakers") != NULL) || (strstr(deviceInfo->name, "Line") != NULL)) {
 #endif
