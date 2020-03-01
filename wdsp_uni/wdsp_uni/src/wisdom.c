@@ -143,6 +143,7 @@ void WDSPwisdom (char* directory)
 			fftw_destroy_plan (tplan);
 			psize *= 2;
 		}
+		printf("Exporting wisdom file to %s\n", wisdom_file);
 		fftw_export_wisdom_to_filename(wisdom_file);
 		Sleep(50);
 		_aligned_free (fftout);
