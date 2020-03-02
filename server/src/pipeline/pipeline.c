@@ -239,7 +239,9 @@ static void *pipeline_imp(void *data) {
 				send_message("c.pipeline", "No space in output ring buffer");
 			}
 		}
+		pthread_mutex_unlock(&pipeline_mutex);
 	}
+	pthread_mutex_unlock(&pipeline_mutex);
 	ppl->terminating = TRUE;
 	return (void*)0;
 }
