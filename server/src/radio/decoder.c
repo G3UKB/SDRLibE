@@ -245,6 +245,5 @@ void frame_decode(int n_smpls, int n_rx, int rate, int in_sz, char *ptr_in_bytes
 	// If data was copied then signal the pipeline
 	if (signal) {
 		pthread_cond_signal(&pipeline_con);
-		//pthread_mutex_unlock(&pipeline_mutex);
 	}
 }
