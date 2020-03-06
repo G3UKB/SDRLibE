@@ -169,7 +169,8 @@ DeviceEnumList* enum_outputs() {
 	const PaDeviceInfo *deviceInfo;
 	double sample_rate = 48000.0;
 	int index = 0;
-	int default_id = 0;
+	char* default_name[50];
+	default_name[0] = '\0';
 
 	if (!initialised)
 		audio_init();
@@ -180,8 +181,9 @@ DeviceEnumList* enum_outputs() {
 		return (DeviceEnumList*) NULL;
 	}
 
-	// Get the default device
-	default_id = Pa_GetDefaultOutputDevice();
+	// Get the default device name
+	deviceInfo = Pa_GetDeviceInfo(Pa_GetDefaultOutputDevice());
+	strcpy(default_name, deviceInfo->name);
 
 	// Iterate the device info by index
 	for( dev=0; dev<numDevices; dev++ ) {
@@ -199,7 +201,7 @@ DeviceEnumList* enum_outputs() {
 				strcpy(device_enum_list->devices[index].name, deviceInfo->name);
 				device_enum_list->devices[index].channels = deviceInfo->maxOutputChannels;
 				strcpy(device_enum_list->devices[index].host_api, Pa_GetHostApiInfo(deviceInfo->hostApi)->name);
-				if (index == default_id) device_enum_list->devices[index].default_id = TRUE;
+				if (strcmp(deviceInfo->name, default_name) == 0) device_enum_list->devices[index].default_id = TRUE;
 				else  device_enum_list->devices[index].default_id = FALSE;
 				index++;
 			}
