@@ -745,7 +745,8 @@ void SetRXAMode (int channel, int mode)
 			break;
 		}
 		RXAbp1Set (channel);
-		RXAbpsnbaSet (channel);							// update variables
+		RXAbpsnbaSet (channel);	
+		// update variables
 		LeaveCriticalSection (&ch[channel].csDSP);
 	}
 }
