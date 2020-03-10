@@ -710,16 +710,16 @@ void setDSPBuffsize_rxa (int channel)
 *										RXA Mode & Filter Controls										*
 *																										*
 ********************************************************************************************************/
-
+// RAC Dont do anything with noise filters.
 PORT
 void SetRXAMode (int channel, int mode)
 {
 	if (rxa[channel].mode != mode)
 	{
 		int amd_run = (mode == RXA_AM) || (mode == RXA_SAM);
-		RXAbpsnbaCheck (channel, mode, rxa[channel].ndb.p->master_run);
-		RXAbp1Check (channel, amd_run, rxa[channel].snba.p->run, rxa[channel].emnr.p->run, 
-			rxa[channel].anf.p->run, rxa[channel].anr.p->run);
+		//RXAbpsnbaCheck (channel, mode, rxa[channel].ndb.p->master_run);
+		//RXAbp1Check (channel, amd_run, rxa[channel].snba.p->run, rxa[channel].emnr.p->run, 
+		//	rxa[channel].anf.p->run, rxa[channel].anr.p->run);
 		EnterCriticalSection (&ch[channel].csDSP);
 		rxa[channel].mode = mode;
 		rxa[channel].amd.p->run  = 0;
@@ -773,20 +773,35 @@ void RXAbp1Check (int channel, int amd_run, int snba_run,
 		anf_run  ||
 		anr_run)	gain = 2.0;
 	else			gain = 1.0;
-	if (a->gain != gain)
-		setGain_bandpass (a, gain, 0);
+	if (a->gain != gain) {
+		setGain_bandpass(a, gain, 0);
+	}
 }
 
 void RXAbp1Set (int channel)
 {
 	BANDPASS a = rxa[channel].bp1.p;
 	int old = a->run;
-	if ((rxa[channel].amd.p->run  == 1) ||
-		(rxa[channel].snba.p->run == 1) ||
-		(rxa[channel].emnr.p->run == 1) ||
-		(rxa[channel].anf.p->run  == 1) ||
-		(rxa[channel].anr.p->run  == 1))	a->run = 1;
-	else									a->run = 0;
+	//a->run = 1;
+	//printf("c %d, %d\n", old, rxa[channel].amd.p->run);
+	//printf("c %d, %d\n", old, rxa[channel].snba.p->run);
+	//printf("c %d, %d\n", old, rxa[channel].emnr.p->run);
+	//printf("c %d, %d\n", old, rxa[channel].anf.p->run);
+	//printf("c %d, %d\n", old, rxa[channel].anr.p->run);
+	
+	if ((rxa[channel].amd.p->run == 1) ||
+		(rxa[channel].snba.p->run == 1)) // ||
+		//(rxa[channel].emnr.p->run == 1) ||
+		//(rxa[channel].anf.p->run == 1) ||
+		//(rxa[channel].anr.p->run == 1)) 
+	{
+		a->run = 1;
+	}
+	
+	else {
+		a->run = 0;
+	}
+	
 	if (!old && a->run) flush_bandpass (a);
 	setUpdate_fircore (a->p);
 }
