@@ -248,14 +248,12 @@ int c_server_terminate() {
 	* Arguments:
 	*
 	*/
-
 	// Close all channels
 	for (int i = 0; i < pargs->num_rx; i++) {
 		c_server_close_display(pargs->disp[i].ch_id);
 		c_server_close_channel(pargs->rx[i].ch_id);
 	}
 	c_server_close_channel(pargs->tx->ch_id);
-
 	// Stop and terminate the pipeline
 	reader_stop();
 	reader_terminate();
@@ -280,11 +278,9 @@ int c_server_terminate() {
 	mic = NULL;
 	local_mic = NULL;
 	pan = NULL;
-
 	// WBS
 	fftw_destroy_plan(wbs_plan);
 	fftw_free(wbs_in); fftw_free(wbs_out);
-
 	// Free ring buffers
 	ringb_free(rb_iq_in);
 	ringb_free(rb_mic_in);
@@ -297,7 +293,6 @@ int c_server_terminate() {
 	c_server_running = FALSE;
 	c_server_initialised = FALSE;
 	allocated = FALSE;
-	
 	return TRUE;
 }
 

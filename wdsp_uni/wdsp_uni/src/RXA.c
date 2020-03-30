@@ -470,7 +470,8 @@ void destroy_rxa (int channel)
 	destroy_bandpass (rxa[channel].bp1.p);
 	destroy_meter (rxa[channel].agcmeter.p);
 	destroy_wcpagc (rxa[channel].agc.p);
-	destroy_emnr (rxa[channel].emnr.p);
+	// *RAC* NR hangs with this universal version!!
+	//destroy_emnr (rxa[channel].emnr.p);
 	destroy_anr (rxa[channel].anr.p);
 	destroy_anf (rxa[channel].anf.p);
 	destroy_eqp (rxa[channel].eqp.p);
