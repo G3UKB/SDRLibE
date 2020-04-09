@@ -454,11 +454,16 @@ static void do_display(Pipeline *ppl, Transforms *ptr) {
 		for (j=0 ; j < ppl->args->general.iq_blk_sz*2 ; j++) {
 			f_display[j] = (float)ptr->dec_iq_data[i][j];
 		}
-		// RAC - Windows only version
-		//Spectrum2(disp_id, 0, 0, f_display);
+		
+#ifdef UNIVERSAL
 		// RAC - Universal version
 		// Added run param at start, set to 1?
 		Spectrum2(1, disp_id, 0, 0, f_display);
+#else
+		// RAC - Windows only version
+		Spectrum2(disp_id, 0, 0, f_display);
+#endif
+
 	}
 }
 

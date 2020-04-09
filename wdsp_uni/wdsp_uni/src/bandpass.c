@@ -396,6 +396,7 @@ void SetRXABandpassFreqs (int channel, double f_low, double f_high)
 	BANDPASS a = rxa[channel].bp1.p;
 	if ((f_low != a->f_low) || (f_high != a->f_high))
 	{
+		//printf("%f,%f,%f,%d\n", f_low, f_high, a->samplerate, a->wintype);
 		impulse = fir_bandpass (a->nc, f_low, f_high, a->samplerate, 
 			a->wintype, 1, a->gain / (double)(2 * a->size));
 		setImpulse_fircore (a->p, impulse, 0);
