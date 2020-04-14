@@ -418,7 +418,7 @@ void cc_out_common_set_freq(unsigned int freq_in_hz, unsigned char* cc_array) {
 }
 
 // Set the RX frequency
-void cc_out_set_rx_1_freq(unsigned int freq_in_hz) {
+void cc_out_set_rx_tx_freq(unsigned int freq_in_hz) {
 	// Set NCO-1
 	unsigned char* cc_array;
 	cc_array = cc_out_array[B_RX1_TX_F];
@@ -442,8 +442,8 @@ void cc_out_set_rx_3_freq(unsigned int freq_in_hz) {
 
 void cc_out_set_tx_freq(unsigned int freq_in_hz) {
 	// Set NCO-1
-	//unsigned char* cc_array = cc_out_array[B_RX1_TX_F];
-	//cc_out_common_set_freq(freq_in_hz, cc_array);
+	unsigned char* cc_array = cc_out_array[B_RX1_TX_F];
+	cc_out_common_set_freq(freq_in_hz, cc_array);
 }
 
 // Initialise the CC arrays
@@ -462,6 +462,6 @@ void cc_out_init() {
 	cc_out_alex_tx_rly(TX_RLY_TX1);
 	cc_out_duplex(DUPLEX_OFF);
 	cc_out_num_rx( NUM_RX_1);
-	cc_out_set_rx_1_freq( 7150000 );
+	cc_out_set_rx_tx_freq( 7150000 );
 	cc_out_set_tx_freq(7150000);
 }

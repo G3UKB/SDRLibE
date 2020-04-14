@@ -106,7 +106,7 @@ void cc_out_hpf_20(int setting);
 void cc_out_hpf_9_5(int setting);
 void cc_out_hpf_6_5(int setting);
 void cc_out_hpf_1_5(int setting);
-void cc_out_set_rx_1_freq(unsigned int freq_in_hz);
+void cc_out_set_rx_tx_freq(unsigned int freq_in_hz);
 void cc_out_set_rx_2_freq(unsigned int freq_in_hz);
 void cc_out_set_rx_3_freq(unsigned int freq_in_hz);
 void cc_out_set_tx_freq(unsigned int freq_in_hz);
