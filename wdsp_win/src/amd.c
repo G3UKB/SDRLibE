@@ -243,8 +243,8 @@ void xamd (AMD a)
 *																										*
 ********************************************************************************************************/
 
-PORT void
-SetRXAAMDRun(int channel, int run)
+//PORT void
+void SetRXAAMDRun(int channel, int run)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].amd.p->run = run;
@@ -253,16 +253,16 @@ SetRXAAMDRun(int channel, int run)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT void
-SetRXAAMDSBMode(int channel, int sbmode)
+//PORT void
+void SetRXAAMDSBMode(int channel, int sbmode)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].amd.p->sbmode = sbmode;
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT void
-SetRXAAMDFadeLevel(int channel, int levelfade)
+//PORT void
+void SetRXAAMDFadeLevel(int channel, int levelfade)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].amd.p->levelfade = levelfade;

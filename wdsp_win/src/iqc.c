@@ -169,7 +169,7 @@ void xiqc (IQC a)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 void GetTXAiqcValues (int channel, double* cm, double* cc, double* cs)
 {
 	IQC a;
@@ -181,7 +181,7 @@ void GetTXAiqcValues (int channel, double* cm, double* cc, double* cs)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetTXAiqcValues (int channel, double* cm, double* cc, double* cs)
 {
 	IQC a;
@@ -195,7 +195,7 @@ void SetTXAiqcValues (int channel, double* cm, double* cc, double* cs)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetTXAiqcSwap (int channel, double* cm, double* cc, double* cs)
 {
 	IQC a = txa[channel].iqc.p1;
@@ -211,7 +211,7 @@ void SetTXAiqcSwap (int channel, double* cm, double* cc, double* cs)
 	while (_InterlockedAnd (&a->busy, 1)) Sleep(1);
 }
 
-PORT
+//PORT
 void SetTXAiqcStart (int channel, double* cm, double* cc, double* cs)
 {
 	IQC a = txa[channel].iqc.p1;
@@ -228,7 +228,7 @@ void SetTXAiqcStart (int channel, double* cm, double* cc, double* cs)
 	while (_InterlockedAnd (&a->busy, 1)) Sleep(1);
 }
 
-PORT
+//PORT
 void SetTXAiqcEnd (int channel)
 {
 	IQC a = txa[channel].iqc.p1;

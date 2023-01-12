@@ -142,8 +142,8 @@ void flush_anr (ANR a)
 *																										*
 ********************************************************************************************************/
 
-PORT void
-SetRXAANRRun (int channel, int setit)
+//PORT void
+void SetRXAANRRun (int channel, int setit)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].anr.p->run = setit;
@@ -153,8 +153,8 @@ SetRXAANRRun (int channel, int setit)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT void
-SetRXAANRVals (int channel, int taps, int delay, double gain, double leakage)
+//PORT void
+void SetRXAANRVals (int channel, int taps, int delay, double gain, double leakage)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].anr.p->n_taps = taps;
@@ -165,8 +165,8 @@ SetRXAANRVals (int channel, int taps, int delay, double gain, double leakage)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT void
-SetRXAANRTaps (int channel, int taps)
+//PORT void
+void SetRXAANRTaps (int channel, int taps)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].anr.p->n_taps = taps;
@@ -174,8 +174,8 @@ SetRXAANRTaps (int channel, int taps)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT void
-SetRXAANRDelay (int channel, int delay)
+//PORT void
+void SetRXAANRDelay (int channel, int delay)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].anr.p->delay = delay;
@@ -183,8 +183,8 @@ SetRXAANRDelay (int channel, int delay)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT void
-SetRXAANRGain (int channel, double gain)
+//PORT void
+void SetRXAANRGain (int channel, double gain)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].anr.p->two_mu = gain;
@@ -192,8 +192,8 @@ SetRXAANRGain (int channel, double gain)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT void
-SetRXAANRLeakage (int channel, double leakage)
+//PORT void
+void SetRXAANRLeakage (int channel, double leakage)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].anr.p->gamma = leakage;
@@ -201,8 +201,8 @@ SetRXAANRLeakage (int channel, double leakage)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT void
-SetRXAANRPosition (int channel, int position)
+//PORT void
+void SetRXAANRPosition (int channel, int position)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].anr.p->position = position;

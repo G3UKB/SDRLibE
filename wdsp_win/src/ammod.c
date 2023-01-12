@@ -72,8 +72,8 @@ void xammod (AMMOD a)
 *																										*
 ********************************************************************************************************/
 
-PORT void
-SetTXAAMCarrierLevel (int channel, double c_level)
+//PORT void
+void SetTXAAMCarrierLevel (int channel, double c_level)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	txa[channel].ammod.p->c_level = c_level;

@@ -135,7 +135,7 @@ void sip_spectrum (SIPHON a)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 void RXAGetaSipF (int channel, float* out, int size)
 {	// return raw samples as floats
 	SIPHON a;
@@ -151,7 +151,7 @@ void RXAGetaSipF (int channel, float* out, int size)
 	}
 }
 
-PORT
+//PORT
 void RXAGetaSipF1 (int channel, float* out, int size)
 {	// return raw samples as floats
 	SIPHON a;
@@ -174,7 +174,7 @@ void RXAGetaSipF1 (int channel, float* out, int size)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 void TXAGetaSipF (int channel, float* out, int size)
 {	// return raw samples as floats
 	SIPHON a;
@@ -190,7 +190,7 @@ void TXAGetaSipF (int channel, float* out, int size)
 	}
 }
 
-PORT
+//PORT
 void TXAGetaSipF1 (int channel, float* out, int size)
 {	// return raw samples as floats
 	SIPHON a;
@@ -207,7 +207,7 @@ void TXAGetaSipF1 (int channel, float* out, int size)
 	}
 }
 
-PORT
+//PORT
 void TXAGetSpecF1 (int channel, float* out)
 {	// return spectrum magnitudes in dB
 	SIPHON a;

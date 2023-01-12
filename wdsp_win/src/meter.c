@@ -101,7 +101,7 @@ void xmeter (METER a)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 double GetRXAMeter (int channel, int mt)
 {
 	double val;
@@ -117,7 +117,7 @@ double GetRXAMeter (int channel, int mt)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 double GetTXAMeter (int channel, int mt)
 {
 	double val;

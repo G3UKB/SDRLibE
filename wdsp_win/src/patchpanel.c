@@ -106,7 +106,7 @@ void xpanel (PANEL a)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 void SetRXAPanelRun (int channel, int run)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
@@ -122,7 +122,7 @@ void SetRXAPanelSelect (int channel, int select)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAPanelGain1 (int channel, double gain)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
@@ -130,7 +130,7 @@ void SetRXAPanelGain1 (int channel, double gain)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAPanelGain2 (int channel, double gainI, double gainQ)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
@@ -139,7 +139,7 @@ void SetRXAPanelGain2 (int channel, double gainI, double gainQ)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAPanelPan (int channel, double pan)
 {
 	double gain1, gain2;
@@ -159,7 +159,7 @@ void SetRXAPanelPan (int channel, double pan)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAPanelCopy (int channel, int copy)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
@@ -167,7 +167,7 @@ void SetRXAPanelCopy (int channel, int copy)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAPanelBinaural (int channel, int bin)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
@@ -181,7 +181,7 @@ void SetRXAPanelBinaural (int channel, int bin)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 void SetTXAPanelRun (int channel, int run)
 {
 	EnterCriticalSection (&ch[channel].csDSP);

@@ -130,7 +130,7 @@ void xfmmod (FMMOD a)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 void SetTXAFMDeviation (int channel, double deviation)
 {
 	double* impulse;
@@ -150,7 +150,7 @@ void SetTXAFMDeviation (int channel, double deviation)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetTXACTCSSFreq (int channel, double freq)
 {
 	FMMOD a;
@@ -162,7 +162,7 @@ void SetTXACTCSSFreq (int channel, double freq)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetTXACTCSSRun (int channel, int run)
 {
 	EnterCriticalSection (&ch[channel].csDSP);

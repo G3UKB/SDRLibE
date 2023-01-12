@@ -144,7 +144,7 @@ extern void xrxa (int channel);
 
 // RXA Properties
 
-void SetRXAMode (int channel, int mode);
+PORT void SetRXAMode (int channel, int mode);
 
 extern void RXAResCheck (int channel);
 

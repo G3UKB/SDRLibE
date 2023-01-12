@@ -179,7 +179,7 @@ void xfmd (FMD a)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 void SetRXAFMDeviation (int channel, double deviation)
 {
 	FMD a;

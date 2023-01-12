@@ -673,7 +673,6 @@ int c_server_get_display_data(int display_id, void *display_data) {
 	double *data = (double*)display_data;
 	flag = 0;
 	int pan_sz;
-
 	if (display_id == 0) pan_sz = pan_sz_r1;
 	else if (display_id == 1) pan_sz = pan_sz_r1;
 	else pan_sz = pan_sz_r3;
@@ -684,6 +683,7 @@ int c_server_get_display_data(int display_id, void *display_data) {
 			data[i] = pan[i];
 		}
 	}
+	
 	return flag;
 }
 
@@ -1065,6 +1065,9 @@ void c_server_cc_out_hpf_1_5(int setting) {
 	cc_out_hpf_1_5(setting);
 }
 void c_server_cc_out_set_rx_tx_freq(unsigned int freq_in_hz) {
+	cc_out_set_rx_tx_freq(freq_in_hz);
+}
+void c_server_cc_out_set_rx_1_freq(unsigned int freq_in_hz) {
 	cc_out_set_rx_tx_freq(freq_in_hz);
 }
 void c_server_cc_out_set_rx_2_freq(unsigned int freq_in_hz) {

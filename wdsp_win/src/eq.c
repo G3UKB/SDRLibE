@@ -157,7 +157,7 @@ void xeq (EQ a)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 void SetRXAEQRun (int channel, int run)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
@@ -165,7 +165,7 @@ void SetRXAEQRun (int channel, int run)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAEQProfile (int channel, int nfreqs, double* F, double* G)
 {
 	EQ a;
@@ -179,7 +179,7 @@ void SetRXAEQProfile (int channel, int nfreqs, double* F, double* G)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAEQCtfmode (int channel, int mode)
 {
 	EQ a;
@@ -191,7 +191,7 @@ void SetRXAEQCtfmode (int channel, int mode)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAEQMethod (int channel, int method)
 {
 	EQ a;
@@ -203,7 +203,7 @@ void SetRXAEQMethod (int channel, int method)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAGrphEQ (int channel, int *rxeq)
 {	// three band equalizer (legacy compatibility)
 	EQ a;
@@ -229,7 +229,7 @@ void SetRXAGrphEQ (int channel, int *rxeq)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAGrphEQ10 (int channel, int *rxeq)
 {	// ten band equalizer (legacy compatibility)
 	EQ a;
@@ -265,7 +265,7 @@ void SetRXAGrphEQ10 (int channel, int *rxeq)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 void SetTXAEQRun (int channel, int run)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
@@ -273,7 +273,7 @@ void SetTXAEQRun (int channel, int run)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetTXAEQProfile (int channel, int nfreqs, double* F, double* G)
 {
 	EQ a;
@@ -287,7 +287,7 @@ void SetTXAEQProfile (int channel, int nfreqs, double* F, double* G)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetTXAEQCtfmode (int channel, int mode)
 {
 	EQ a;
@@ -299,7 +299,7 @@ void SetTXAEQCtfmode (int channel, int mode)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetTXAEQMethod (int channel, int method)
 {
 	EQ a;
@@ -311,7 +311,7 @@ void SetTXAEQMethod (int channel, int method)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetTXAGrphEQ (int channel, int *txeq)
 {	// three band equalizer (legacy compatibility)
 	EQ a;
@@ -337,7 +337,7 @@ void SetTXAGrphEQ (int channel, int *txeq)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetTXAGrphEQ10 (int channel, int *txeq)
 {	// ten band equalizer (legacy compatibility)
 	EQ a;

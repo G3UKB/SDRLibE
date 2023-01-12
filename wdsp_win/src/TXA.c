@@ -473,7 +473,7 @@ void xtxa (int channel)
 *																										*
 ********************************************************************************************************/
 
-PORT
+//PORT
 void SetTXAMode (int channel, int mode)
 {
 	EnterCriticalSection (&ch[channel].csDSP);

@@ -103,5 +103,5 @@ warren@wpratt.com
 
 // miscellaneous
 typedef double complex[2];
-//#define PORT							__declspec( dllexport )
-#define PORT
+#define PORT							__declspec( dllexport )
+//#define PORT

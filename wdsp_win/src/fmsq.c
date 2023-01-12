@@ -220,7 +220,7 @@ void SetRXAFMSQRun (int channel, int run)
 	LeaveCriticalSection (&ch[channel].csDSP);
 }
 
-PORT
+//PORT
 void SetRXAFMSQThreshold (int channel, double threshold)
 {
 	EnterCriticalSection (&ch[channel].csDSP);

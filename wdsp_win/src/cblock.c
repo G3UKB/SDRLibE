@@ -88,8 +88,8 @@ void xcbl (CBL a)
 *																										*
 ********************************************************************************************************/
 
-PORT void
-SetRXACBLRun(int channel, int setit)
+//PORT void
+void SetRXACBLRun(int channel, int setit)
 {
 	EnterCriticalSection (&ch[channel].csDSP);
 	rxa[channel].cbl.p->run = setit;
