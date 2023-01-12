@@ -669,8 +669,8 @@ int c_server_get_display_data(int display_id, void *display_data) {
 	*/
 
 	int i, flag;
-	//float *data = (float*)display_data;
-	double *data = (double*)display_data;
+	float *data = (float*)display_data;
+	//double *data = (double*)display_data;
 	flag = 0;
 	int pan_sz;
 	if (display_id == 0) pan_sz = pan_sz_r1;

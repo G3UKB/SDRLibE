@@ -197,7 +197,6 @@ DeviceEnumList* enum_outputs() {
 #else
 			if ((strstr(deviceInfo->name, "Speakers") != NULL) || (strstr(deviceInfo->name, "Line") != NULL)) {
 #endif
-				printf("Name: %s", deviceInfo->name);
 				device_enum_list->devices[index].direction = DIR_OUT;
 				device_enum_list->devices[index].index = dev;
 				strcpy(device_enum_list->devices[index].name, deviceInfo->name);
